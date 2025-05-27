@@ -26,44 +26,52 @@ jobs:
     runs-on: ubuntu-24.04
     permissions:
       contents: read
-    timeout-minutes: 10 # Increase this timeout value as needed
+    timeout-minutes: 3
+    # yamllint disable rule:line-length
     steps:
       - name: "Checkout repository"
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # Perform setup prior to running test(s)
-      - name: "Testing setup step"
-        shell: bash
-        run: |
-          # Testing setup step
-          echo "Testing setup step"
-          echo "Testing setup step/summary output" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: "Running local action: ${{ github.repository }}"
+      - name: "Running local action: ${{ github.repository }} [v1.0.0]"
+        id: first
         uses: ./
         with:
-          input: "test input 💬"
+          tag: 'v1.0.0'
 
-      - name: "Validated local action: ${{ github.repository }}"
+      - name: "Running local action: ${{ github.repository }} [v1.1.0/minor/production]"
+        id: second
+        uses: ./
+        with:
+          tag: 'v1.1.0'
+          increment: 'minor'
+          type: 'production'
+
+      - name: "Running local action: ${{ github.repository }} [v1.1.0-dev3/minor/development]"
+        id: third
+        uses: ./
+        with:
+          tag: 'v1.1.0-dev3'
+          increment: 'minor'
+          type: 'development'
+
+      - name: "Running local action: ${{ github.repository }}"
+        id: fourth
+        uses: ./
+        with:
+          tag: 'v1.1.0'
+          increment: 'minor'
+          type: 'production'
+
+      - name: "Running local action: ${{ github.repository }} [v2.2.0-dev1/minor/development]"
+        id: fifth
+        uses: ./
+        with:
+          tag: 'v1.1.0-dev3'
+          increment: 'major'
+          type: 'production'
+
+      - name: "Validate local action: ${{ github.repository }}"
         shell: bash
         run: |
           # Local action validation
-          echo "Validated local action: ${{ github.repository }}"
-          echo "Validation step summary output" >> "$GITHUB_STEP_SUMMARY"
-
-      # yamllint disable-line rule:line-length
-      - name: "Running local action: ${{ github.repository }} [Override Failure]"
-        uses: ./
-        id: failure
-        continue-on-error: true
-        with:
-          invalid_input: "Some garbage"
-
-      # Failure testing is also important
-      - name: "Error if step above did NOT fail"
-        if: steps.failure.outcome == 'success'
-        shell: bash
-        run: |
-          # Error if step above did NOT fail
-          echo "Error: previous test step did NOT fail ❌"
-          exit 1
+          echo 'Placeholder validation step'
