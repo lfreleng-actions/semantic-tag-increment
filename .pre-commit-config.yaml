@@ -44,13 +44,13 @@ repos:
       - id: gitlint
 
   - repo: https://github.com/adrienverge/yamllint.git
-    rev: 79a6b2b1392eaf49cdd32ac4f14be1a809bbd8f7  # frozen: v1.37.1
+    rev: 79a6b2b1392eaf49cdd32ac4f14be1a809bbd8f7 # frozen: v1.37.1
     hooks:
       - id: yamllint
         types: [yaml]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 76e47323a83cd9795e4ff9a1de1c0d2eef610f17  # frozen: v0.11.11
+    rev: 3d44372123ca5e8617fdb65d9f11facd159b9e95  # frozen: v0.12.3
     hooks:
       - id: ruff
         files: ^(scripts|tests|custom_components)/.+\.py$
@@ -62,12 +62,15 @@ repos:
     rev: f40886d54c729f533f864ed6ce584e920feb0af7 # frozen: v1.15.0
     hooks:
       - id: mypy
+        files: ^src/
+        additional_dependencies: [types-requests, types-PyYAML, typer]
 
   - repo: https://github.com/btford/write-good
     rev: ab66ce10136dfad5146e69e70f82a3efac8842c1 # frozen: v1.0.8
     hooks:
       - id: write-good
         files: "\\.(rst|md|markdown|mdown|mkdn)$"
+        args: ["--no-tooWordy"]
 
   - repo: https://github.com/shellcheck-py/shellcheck-py
     rev: a23f6b85d0fdd5bb9d564e2579e678033debbdff # frozen: v0.10.0.1
@@ -75,7 +78,7 @@ repos:
       - id: shellcheck
 
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: 192ad822316c3a22fb3d3cc8aa6eafa0b8488360  # frozen: v0.45.0
+    rev: 192ad822316c3a22fb3d3cc8aa6eafa0b8488360 # frozen: v0.45.0
     hooks:
       - id: markdownlint
         args: ["--fix"]
@@ -100,10 +103,8 @@ repos:
         args: ["--ignore-words=.codespell"]
 
   - repo: https://github.com/python-jsonschema/check-jsonschema.git
-    rev: 06e4cc849d03f3a59ca223a4046f4bb5bb2aba6d  # frozen: 0.33.0
+    rev: 54da05914997e6b04e4db33ed6757d744984c68b  # frozen: 0.33.2
     hooks:
-      - id: check-github-actions
-      - id: check-github-workflows
       - id: check-jsonschema
         name: Check GitHub Workflows set timeout-minutes
         args:

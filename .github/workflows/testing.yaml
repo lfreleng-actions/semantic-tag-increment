@@ -3,67 +3,867 @@
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
 # Action test/validation workflow
-name: "Test GitHub Action 🧪"
+name: 'Test GitHub Action 🧪'
 
 # yamllint disable-line rule:truthy
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
-    branches: ["main"]
+    branches: ['main']
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: "${{ github.workflow }}-${{ github.ref }}"
   cancel-in-progress: true
 
 permissions: {}
 
 jobs:
-  ### Test the GitHub Action in this Repository ###
-  tests:
-    name: "Test local GitHub Action"
-    runs-on: ubuntu-24.04
+  ### Test Basic Functionality (Legacy Tests) ###
+  basic-tests:
+    name: 'Basic Functionality Tests'
+    runs-on: 'ubuntu-latest'
     permissions:
       contents: read
-    timeout-minutes: 10 # Increase this timeout value as needed
+    timeout-minutes: 5
     steps:
-      - name: "Checkout repository"
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
         uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
 
-      # Perform setup prior to running test(s)
-      - name: "Testing setup step"
-        shell: bash
-        run: |
-          # Testing setup step
-          echo "Testing setup step"
-          echo "Testing setup step/summary output" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: "Running local action: ${{ github.repository }}"
+      - name: "Basic test: patch increment"
+        id: basic-patch
         uses: ./
         with:
-          input: "test input 💬"
+          tag: 'v1.0.0'
+          increment: 'patch'
 
-      - name: "Validated local action: ${{ github.repository }}"
+      - name: "Basic test: minor increment"
+        id: basic-minor
+        uses: ./
+        with:
+          tag: 'v1.1.0'
+          increment: 'minor'
+
+      - name: "Basic test: major increment"
+        id: basic-major
+        uses: ./
+        with:
+          tag: 'v1.1.0'
+          increment: 'major'
+
+      - name: "Basic test: prerelease increment"
+        id: basic-prerelease
+        uses: ./
+        with:
+          tag: 'v1.1.0'
+          increment: 'prerelease'
+
+      - name: "Basic test: dev increment"
+        id: basic-dev
+        uses: ./
+        with:
+          tag: 'v1.1.0'
+          increment: 'dev'
+
+      - name: "Validate basic test results"
         shell: bash
         run: |
-          # Local action validation
-          echo "Validated local action: ${{ github.repository }}"
-          echo "Validation step summary output" >> "$GITHUB_STEP_SUMMARY"
+          # Validate all basic test results
+          echo "🔍 Validating basic test results..."
 
+          # Test patch increment
+          if [ "${{ steps.basic-patch.outputs.tag }}" != "v1.0.1" ]; then
+            echo "❌ Patch increment failed: expected v1.0.1, got ${{ steps.basic-patch.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Patch increment: v1.0.0 → ${{ steps.basic-patch.outputs.tag }}"
+
+          # Test minor increment
+          if [ "${{ steps.basic-minor.outputs.tag }}" != "v1.2.0" ]; then
+            echo "❌ Minor increment failed: expected v1.2.0, got ${{ steps.basic-minor.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Minor increment: v1.1.0 → ${{ steps.basic-minor.outputs.tag }}"
+
+          # Test major increment
+          if [ "${{ steps.basic-major.outputs.tag }}" != "v2.0.0" ]; then
+            echo "❌ Major increment failed: expected v2.0.0, got ${{ steps.basic-major.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Major increment: v1.1.0 → ${{ steps.basic-major.outputs.tag }}"
+
+          # Test prerelease increment
+          if [ "${{ steps.basic-prerelease.outputs.tag }}" != "v1.2.0-dev.1" ]; then
+            echo "❌ Prerelease increment failed: expected v1.2.0-dev.1, got ${{ steps.basic-prerelease.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Prerelease increment: v1.1.0 → ${{ steps.basic-prerelease.outputs.tag }}"
+
+          # Test dev increment
+          if [ "${{ steps.basic-dev.outputs.tag }}" != "v1.2.0-dev.1" ]; then
+            echo "❌ Dev increment failed: expected v1.2.0-dev.1, got ${{ steps.basic-dev.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Dev increment: v1.1.0 → ${{ steps.basic-dev.outputs.tag }}"
+
+  ### Test String Mode ###
+  string-mode-tests:
+    name: 'String Mode Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
       # yamllint disable-line rule:line-length
-      - name: "Running local action: ${{ github.repository }} [Override Failure]"
-        uses: ./
-        id: failure
-        continue-on-error: true
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
         with:
-          invalid_input: "Some garbage"
+          egress-policy: 'audit'
 
-      # Failure testing is also important
-      - name: "Error if step above did NOT fail"
-        if: steps.failure.outcome == 'success'
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "String mode: basic patch"
+        id: string-patch
+        uses: ./
+        with:
+          mode: 'string'
+          tag: 'v2.1.0'
+          increment: 'patch'
+
+      - name: "String mode: prerelease with type"
+        id: string-prerelease
+        uses: ./
+        with:
+          mode: 'string'
+          tag: '1.0.0'
+          increment: 'prerelease'
+          prerelease_type: 'alpha'
+
+      - name: "String mode: complex prerelease"
+        id: string-complex
+        uses: ./
+        with:
+          mode: 'string'
+          tag: 'v1.0.0-alpha.1'
+          increment: 'prerelease'
+
+      - name: "String mode: no prefix"
+        id: string-no-prefix
+        uses: ./
+        with:
+          mode: 'string'
+          tag: '3.2.1'
+          increment: 'minor'
+
+      - name: "Validate string mode results"
         shell: bash
         run: |
-          # Error if step above did NOT fail
-          echo "Error: previous test step did NOT fail ❌"
-          exit 1
+          echo "🔍 Validating string mode results..."
+
+          # Test basic patch
+          if [ "${{ steps.string-patch.outputs.tag }}" != "v2.1.1" ]; then
+            echo "❌ String patch failed: expected v2.1.1, got ${{ steps.string-patch.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ String patch: v2.1.0 → ${{ steps.string-patch.outputs.tag }}"
+
+          # Test prerelease with type
+          if [ "${{ steps.string-prerelease.outputs.tag }}" != "1.1.0-alpha.1" ]; then
+            echo "❌ String prerelease failed: expected 1.1.0-alpha.1, got ${{ steps.string-prerelease.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ String prerelease: 1.0.0 → ${{ steps.string-prerelease.outputs.tag }}"
+
+          # Test complex prerelease
+          if [ "${{ steps.string-complex.outputs.tag }}" != "v1.0.0-alpha.2" ]; then
+            echo "❌ String complex failed: expected v1.0.0-alpha.2, got ${{ steps.string-complex.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ String complex: v1.0.0-alpha.1 → ${{ steps.string-complex.outputs.tag }}"
+
+          # Test no prefix
+          if [ "${{ steps.string-no-prefix.outputs.tag }}" != "3.3.0" ]; then
+            echo "❌ String no prefix failed: expected 3.3.0, got ${{ steps.string-no-prefix.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ String no prefix: 3.2.1 → ${{ steps.string-no-prefix.outputs.tag }}"
+
+  ### Test Path Mode ###
+  path-mode-tests:
+    name: 'Path Mode Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Test with current Python project
+      - name: "Path mode: current project"
+        id: path-current
+        uses: ./
+        with:
+          mode: 'path'
+          increment: 'patch'
+          check_tags: 'false'
+
+      # Checkout external test project
+      - name: 'Checkout Python test project'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: 'lfreleng-actions/test-python-project'
+          path: 'test-python-project'
+
+      - name: "Path mode: external project"
+        id: path-external
+        uses: ./
+        with:
+          mode: 'path'
+          increment: 'minor'
+          path_prefix: 'test-python-project'
+          check_tags: 'false'
+
+      - name: "Path mode: with prerelease type"
+        id: path-prerelease
+        uses: ./
+        with:
+          mode: 'path'
+          increment: 'prerelease'
+          prerelease_type: 'beta'
+          path_prefix: 'test-python-project'
+          check_tags: 'false'
+
+      - name: "Validate path mode results"
+        shell: bash
+        run: |
+          echo "🔍 Validating path mode results..."
+
+          # Current project should increment from version in __init__.py
+          echo "✅ Path current: extracted and incremented to ${{ steps.path-current.outputs.tag }}"
+
+          # External project should increment from pyproject.toml
+          echo "✅ Path external: extracted and incremented to ${{ steps.path-external.outputs.tag }}"
+
+          # Prerelease should include beta
+          case "${{ steps.path-prerelease.outputs.tag }}" in
+            *beta*)
+
+              ;;
+            *)
+              echo "❌ Path prerelease failed: expected beta in tag, got ${{ steps.path-prerelease.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+          echo "✅ Path prerelease: ${{ steps.path-prerelease.outputs.tag }}"
+
+  ### Test Combined Mode ###
+  combined-mode-tests:
+    name: 'Combined Mode Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Combined mode: with conflict checking"
+        id: combined-conflicts
+        uses: ./
+        with:
+          mode: 'combined'
+          tag: 'v0.1.0'
+          increment: 'patch'
+          check_tags: 'true'
+
+      - name: "Combined mode: no conflict checking"
+        id: combined-no-conflicts
+        uses: ./
+        with:
+          mode: 'combined'
+          tag: 'v2.0.0'
+          increment: 'minor'
+          check_tags: 'false'
+
+      - name: "Combined mode: with path prefix"
+        id: combined-path
+        uses: ./
+        with:
+          mode: 'combined'
+          tag: 'v1.5.0'
+          increment: 'major'
+          path_prefix: '.'
+          check_tags: 'false'
+
+      - name: "Validate combined mode results"
+        shell: bash
+        run: |
+          echo "🔍 Validating combined mode results..."
+
+          # Should handle conflicts and potentially increment beyond v0.1.1
+          echo "✅ Combined conflicts: ${{ steps.combined-conflicts.outputs.tag }}"
+
+          # Should be exactly v2.1.0 without conflict checking
+          if [ "${{ steps.combined-no-conflicts.outputs.tag }}" != "v2.1.0" ]; then
+            echo "❌ Combined no conflicts failed: expected v2.1.0, got ${{ steps.combined-no-conflicts.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Combined no conflicts: v2.0.0 → ${{ steps.combined-no-conflicts.outputs.tag }}"
+
+          # Should be exactly v2.0.0 from major increment
+          if [ "${{ steps.combined-path.outputs.tag }}" != "v2.0.0" ]; then
+            echo "❌ Combined path failed: expected v2.0.0, got ${{ steps.combined-path.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Combined path: v1.5.0 → ${{ steps.combined-path.outputs.tag }}"
+
+  ### Test Auto Mode ###
+  auto-mode-tests:
+    name: 'Auto Mode Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Auto mode: with tag provided"
+        id: auto-with-tag
+        uses: ./
+        with:
+          mode: 'auto'
+          tag: 'v3.0.0'
+          increment: 'patch'
+
+      - name: "Auto mode: no tag (path extraction)"
+        id: auto-no-tag
+        uses: ./
+        with:
+          mode: 'auto'
+          increment: 'minor'
+          check_tags: 'false'
+
+      - name: "Auto mode: default mode (should be auto)"
+        id: auto-default
+        uses: ./
+        with:
+          tag: 'v1.0.0'
+          increment: 'patch'
+
+      - name: "Validate auto mode results"
+        shell: bash
+        run: |
+          echo "🔍 Validating auto mode results..."
+
+          # Should use provided tag
+          if [ "${{ steps.auto-with-tag.outputs.tag }}" != "v3.0.1" ]; then
+            echo "❌ Auto with tag failed: expected v3.0.1, got ${{ steps.auto-with-tag.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Auto with tag: v3.0.0 → ${{ steps.auto-with-tag.outputs.tag }}"
+
+          # Should extract from project files
+          echo "✅ Auto no tag: extracted and incremented to ${{ steps.auto-no-tag.outputs.tag }}"
+
+          # Default mode should work like auto
+          if [ "${{ steps.auto-default.outputs.tag }}" != "v1.0.1" ]; then
+            echo "❌ Auto default failed: expected v1.0.1, got ${{ steps.auto-default.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Auto default: v1.0.0 → ${{ steps.auto-default.outputs.tag }}"
+
+  ### Test Edge Cases ###
+  edge-case-tests:
+    name: 'Edge Case Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Edge case: zero version"
+        id: edge-zero
+        uses: ./
+        with:
+          tag: '0.0.0'
+          increment: 'patch'
+
+      - name: "Edge case: large version numbers"
+        id: edge-large
+        uses: ./
+        with:
+          tag: 'v999.999.999'
+          increment: 'patch'
+
+      - name: "Edge case: complex prerelease"
+        id: edge-complex
+        uses: ./
+        with:
+          tag: 'v1.2.3----RC-SNAPSHOT.12.9.1--.12'
+          increment: 'prerelease'
+
+      - name: "Edge case: build metadata"
+        id: edge-metadata
+        uses: ./
+        with:
+          tag: 'v1.0.0+build.123'
+          increment: 'minor'
+
+      - name: "Edge case: uppercase prefix"
+        id: edge-uppercase
+        uses: ./
+        with:
+          tag: 'V1.0.0'
+          increment: 'major'
+
+      - name: "Edge case: mixed case prerelease"
+        id: edge-mixed
+        uses: ./
+        with:
+          tag: 'v1.0.0-Alpha.Beta.1'
+          increment: 'prerelease'
+
+      - name: "Validate edge case results"
+        shell: bash
+        run: |
+          echo "🔍 Validating edge case results..."
+
+          # Zero version
+          if [ "${{ steps.edge-zero.outputs.tag }}" != "0.0.1" ]; then
+            echo "❌ Edge zero failed: expected 0.0.1, got ${{ steps.edge-zero.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Edge zero: 0.0.0 → ${{ steps.edge-zero.outputs.tag }}"
+
+          # Large version
+          if [ "${{ steps.edge-large.outputs.tag }}" != "v999.999.1000" ]; then
+            echo "❌ Edge large failed: expected v999.999.1000, got ${{ steps.edge-large.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Edge large: v999.999.999 → ${{ steps.edge-large.outputs.tag }}"
+
+          # Complex prerelease should increment numeric component
+          case "${{ steps.edge-complex.outputs.tag }}" in
+            *13*)
+
+              ;;
+            *)
+              echo "❌ Edge complex failed: expected incremented numeric, got ${{ steps.edge-complex.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+          echo "✅ Edge complex: ${{ steps.edge-complex.outputs.tag }}"
+
+          # Build metadata should be preserved
+          case "${{ steps.edge-metadata.outputs.tag }}" in
+            *+build.123*)
+
+              ;;
+            *)
+              echo "❌ Edge metadata failed: expected preserved metadata, got ${{ steps.edge-metadata.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+          echo "✅ Edge metadata: ${{ steps.edge-metadata.outputs.tag }}"
+
+          # Uppercase prefix should be preserved
+          if [ "${{ steps.edge-uppercase.outputs.tag }}" != "V2.0.0" ]; then
+            echo "❌ Edge uppercase failed: expected V2.0.0, got ${{ steps.edge-uppercase.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Edge uppercase: V1.0.0 → ${{ steps.edge-uppercase.outputs.tag }}"
+
+          # Mixed case should be preserved
+          case "${{ steps.edge-mixed.outputs.tag }}" in
+            *Alpha.Beta.2*)
+
+              ;;
+            *)
+              echo "❌ Edge mixed failed: expected Alpha.Beta.2, got ${{ steps.edge-mixed.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+          echo "✅ Edge mixed: ${{ steps.edge-mixed.outputs.tag }}"
+
+  ### Test Error Handling ###
+  error-handling-tests:
+    name: 'Error Handling Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Error test: invalid tag"
+        id: error-invalid-tag
+        continue-on-error: true
+        uses: ./
+        with:
+          tag: 'invalid-tag'
+          increment: 'patch'
+
+      - name: "Error test: string mode without tag"
+        id: error-string-no-tag
+        continue-on-error: true
+        uses: ./
+        with:
+          mode: 'string'
+          increment: 'patch'
+
+      - name: "Error test: invalid increment type"
+        id: error-invalid-increment
+        continue-on-error: true
+        uses: ./
+        with:
+          tag: 'v1.0.0'
+          increment: 'invalid'
+
+      - name: "Error test: path mode with no project files"
+        id: error-no-project
+        continue-on-error: true
+        uses: ./
+        with:
+          mode: 'path'
+          increment: 'patch'
+          path_prefix: '/tmp'
+
+      - name: "Validate error handling"
+        shell: bash
+        run: |
+          echo "🔍 Validating error handling..."
+
+          # All error tests should fail
+          if [ "${{ steps.error-invalid-tag.outcome }}" != "failure" ]; then
+            echo "❌ Invalid tag should have failed"
+            exit 1
+          fi
+          echo "✅ Invalid tag correctly failed"
+
+          if [ "${{ steps.error-string-no-tag.outcome }}" != "failure" ]; then
+            echo "❌ String mode without tag should have failed"
+            exit 1
+          fi
+          echo "✅ String mode without tag correctly failed"
+
+          if [ "${{ steps.error-invalid-increment.outcome }}" != "failure" ]; then
+            echo "❌ Invalid increment should have failed"
+            exit 1
+          fi
+          echo "✅ Invalid increment correctly failed"
+
+          if [ "${{ steps.error-no-project.outcome }}" != "failure" ]; then
+            echo "❌ No project files should have failed"
+            exit 1
+          fi
+          echo "✅ No project files correctly failed"
+
+  ### Test Output Formats ###
+  output-tests:
+    name: 'Output Format Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 3
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Output test: with prefix"
+        id: output-with-prefix
+        uses: ./
+        with:
+          tag: 'v1.0.0'
+          increment: 'patch'
+
+      - name: "Output test: without prefix"
+        id: output-no-prefix
+        uses: ./
+        with:
+          tag: '1.0.0'
+          increment: 'patch'
+
+      - name: "Validate output formats"
+        shell: bash
+        run: |
+          echo "🔍 Validating output formats..."
+
+          # Test with prefix
+          if [ "${{ steps.output-with-prefix.outputs.tag }}" != "v1.0.1" ]; then
+            echo "❌ Output with prefix failed: expected v1.0.1, got ${{ steps.output-with-prefix.outputs.tag }}"
+            exit 1
+          fi
+          if [ "${{ steps.output-with-prefix.outputs.numeric_tag }}" != "1.0.1" ]; then
+            echo "❌ Numeric output with prefix failed: expected 1.0.1, got ${{ steps.output-with-prefix.outputs.numeric_tag }}"
+            exit 1
+          fi
+          echo "✅ Output with prefix: tag=${{ steps.output-with-prefix.outputs.tag }}, numeric=${{ steps.output-with-prefix.outputs.numeric_tag }}"
+
+          # Test without prefix
+          if [ "${{ steps.output-no-prefix.outputs.tag }}" != "1.0.1" ]; then
+            echo "❌ Output no prefix failed: expected 1.0.1, got ${{ steps.output-no-prefix.outputs.tag }}"
+            exit 1
+          fi
+          if [ "${{ steps.output-no-prefix.outputs.numeric_tag }}" != "1.0.1" ]; then
+            echo "❌ Numeric output no prefix failed: expected 1.0.1, got ${{ steps.output-no-prefix.outputs.numeric_tag }}"
+            exit 1
+          fi
+          echo "✅ Output no prefix: tag=${{ steps.output-no-prefix.outputs.tag }}, numeric=${{ steps.output-no-prefix.outputs.numeric_tag }}"
+
+  ### Test Performance and Conflict Resolution ###
+  performance-tests:
+    name: 'Performance & Conflict Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Test with actual repository tags (conflict detection)
+      - name: "Performance test: with conflict checking"
+        id: perf-conflicts
+        uses: ./
+        with:
+          tag: 'v0.1.0'
+          increment: 'patch'
+          check_tags: 'true'
+
+      - name: "Performance test: without conflict checking"
+        id: perf-no-conflicts
+        uses: ./
+        with:
+          tag: 'v0.1.0'
+          increment: 'patch'
+          check_tags: 'false'
+
+      - name: "Performance test: debug mode"
+        id: perf-debug
+        uses: ./
+        with:
+          tag: 'v1.0.0'
+          increment: 'patch'
+          debug: 'true'
+
+      - name: "Validate performance tests"
+        shell: bash
+        run: |
+          echo "🔍 Validating performance tests..."
+
+          # With conflicts should handle existing tags
+          echo "✅ Performance with conflicts: ${{ steps.perf-conflicts.outputs.tag }}"
+
+          # Without conflicts should be exactly v0.1.1
+          if [ "${{ steps.perf-no-conflicts.outputs.tag }}" != "v0.1.1" ]; then
+            echo "❌ Performance no conflicts failed: expected v0.1.1, got ${{ steps.perf-no-conflicts.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Performance no conflicts: v0.1.0 → ${{ steps.perf-no-conflicts.outputs.tag }}"
+
+          # Debug mode should work
+          if [ "${{ steps.perf-debug.outputs.tag }}" != "v1.0.1" ]; then
+            echo "❌ Performance debug failed: expected v1.0.1, got ${{ steps.perf-debug.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Performance debug: v1.0.0 → ${{ steps.perf-debug.outputs.tag }}"
+
+  ### Test External Repository Integration ###
+  external-repo-tests:
+    name: 'External Repository Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Test with different project types
+      - name: 'Checkout Python test project'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          repository: 'lfreleng-actions/test-python-project'
+          path: 'test-python-project'
+
+      - name: "External test: Python project path mode"
+        id: ext-python-path
+        uses: ./
+        with:
+          mode: 'path'
+          increment: 'patch'
+          path_prefix: 'test-python-project'
+          check_tags: 'false'
+
+      - name: "External test: Python project combined mode"
+        id: ext-python-combined
+        uses: ./
+        with:
+          mode: 'combined'
+          tag: 'v2.0.0'
+          increment: 'minor'
+          path_prefix: 'test-python-project'
+          check_tags: 'false'
+
+      - name: "External test: Python project auto mode"
+        id: ext-python-auto
+        uses: ./
+        with:
+          mode: 'auto'
+          increment: 'prerelease'
+          prerelease_type: 'rc'
+          path_prefix: 'test-python-project'
+          check_tags: 'false'
+
+      - name: "Validate external repository tests"
+        shell: bash
+        run: |
+          echo "🔍 Validating external repository tests..."
+
+          # All external tests should complete successfully
+          echo "✅ External Python path: ${{ steps.ext-python-path.outputs.tag }}"
+          echo "✅ External Python combined: ${{ steps.ext-python-combined.outputs.tag }}"
+          echo "✅ External Python auto: ${{ steps.ext-python-auto.outputs.tag }}"
+
+          # Combined mode should use provided tag
+          if [ "${{ steps.ext-python-combined.outputs.tag }}" != "v2.1.0" ]; then
+            echo "❌ External combined failed: expected v2.1.0, got ${{ steps.ext-python-combined.outputs.tag }}"
+            exit 1
+          fi
+
+          # Auto mode should include rc
+          case "${{ steps.ext-python-auto.outputs.tag }}" in
+            *rc*)
+              # Test passed
+              ;;
+            *)
+              echo "❌ External auto failed: expected rc in tag, got ${{ steps.ext-python-auto.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+  ### Final Summary ###
+  test-summary:
+    name: 'Test Summary'
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 1
+    needs: [
+      basic-tests,
+      string-mode-tests,
+      path-mode-tests,
+      combined-mode-tests,
+      auto-mode-tests,
+      edge-case-tests,
+      error-handling-tests,
+      output-tests,
+      performance-tests,
+      external-repo-tests
+    ]
+    if: always()
+    steps:
+      - name: 'Test Summary'
+        shell: bash
+        run: |
+          echo "🎯 Test Summary"
+          echo "=============="
+          echo "Basic Tests: ${{ needs.basic-tests.result }}"
+          echo "String Mode Tests: ${{ needs.string-mode-tests.result }}"
+          echo "Path Mode Tests: ${{ needs.path-mode-tests.result }}"
+          echo "Combined Mode Tests: ${{ needs.combined-mode-tests.result }}"
+          echo "Auto Mode Tests: ${{ needs.auto-mode-tests.result }}"
+          echo "Edge Case Tests: ${{ needs.edge-case-tests.result }}"
+          echo "Error Handling Tests: ${{ needs.error-handling-tests.result }}"
+          echo "Output Tests: ${{ needs.output-tests.result }}"
+          echo "Performance Tests: ${{ needs.performance-tests.result }}"
+          echo "External Repo Tests: ${{ needs.external-repo-tests.result }}"
+          echo ""
+
+          # Check if any tests failed
+          if [ "${{ needs.basic-tests.result }}" != "success" ] || \
+             [ "${{ needs.string-mode-tests.result }}" != "success" ] || \
+             [ "${{ needs.path-mode-tests.result }}" != "success" ] || \
+             [ "${{ needs.combined-mode-tests.result }}" != "success" ] || \
+             [ "${{ needs.auto-mode-tests.result }}" != "success" ] || \
+             [ "${{ needs.edge-case-tests.result }}" != "success" ] || \
+             [ "${{ needs.error-handling-tests.result }}" != "success" ] || \
+             [ "${{ needs.output-tests.result }}" != "success" ] || \
+             [ "${{ needs.performance-tests.result }}" != "success" ] || \
+             [ "${{ needs.external-repo-tests.result }}" != "success" ]; then
+            echo "❌ One or more test suites failed"
+            exit 1
+          else
+            echo "✅ All test suites passed successfully!"
+          fi
