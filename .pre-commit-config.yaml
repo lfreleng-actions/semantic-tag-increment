@@ -102,8 +102,8 @@ repos:
   - repo: https://github.com/python-jsonschema/check-jsonschema.git
     rev: 06e4cc849d03f3a59ca223a4046f4bb5bb2aba6d  # frozen: 0.33.0
     hooks:
-      - id: check-github-actions
-      - id: check-github-workflows
+      # See: https://github.com/lfreleng-actions/actions-template/issues/36
+      # - id: check-github-actions      - id: check-github-workflows
       - id: check-jsonschema
         name: Check GitHub Workflows set timeout-minutes
         args:

@@ -2,36 +2,166 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
-# actions-template
-name: "🛠️ Actions Template"
-description: "Description of action"
-# Any relevant notes/observations can go here
+# semantic-tag-increment
+name: '🏷️ Increment Semantic Tag'
+# yamllint disable-line rule:line-length
+description: 'Generates an incremented tag from a provided tag and increment level'
+# Increment type are: [major|minor|patch|dev]
+# Generates either a production or development tag
 
 inputs:
-  input:
-    description: "Description of input"
+  tag:
+    description: 'The existing semantic tag to be incremented'
     required: true
+    type: 'string'
+  increment:
+    description: 'Increment to perform [major|minor|patch|dev]'
+    required: false
+    type: 'string'
+    default: 'dev'
+  type:
+    description: 'Increment type to perform [production|development]'
+    required: false
+    type: 'string'
+    default: 'development'
 
 outputs:
-  output:
-    description: "Description of output"
-    value: ${{ steps.code.outputs.output }}
+  tag:
+    description: 'The incremented tag string'
+    value: "${{ steps.increment.outputs.tag }}"
+  numeric_tag:
+    description: 'Numeric tag stripped of any v/V prefix'
+    value: "${{ steps.increment.outputs.numeric_tag }}"
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - name: "Friendly Name"
-      id: code
+    - name: 'Incrementing provided tag'
+      id: increment
       shell: bash
+      # yamllint disable rule:line-length
       run: |
-        # Friendly Name
-        input="${{ inputs.input }}"
-        if [ -z "$input" ]; then
-          echo "Error: mandatory input was not set/configured ❌"
-          exit 1
+        # Incrementing provided tag
+
+        set -vx
+
+        #SHELLCODESTART
+
+        # Allows for testing from a local shell
+        if [ -z "$GITHUB_OUTPUT" ]; then
+          echo "Running from a shell, NOT workflow"
+          export GITHUB_OUTPUT="/dev/null"
+          export GITHUB_ENV="/dev/null"
+          if [ $# -ne 2 ]; then
+            echo "Error: invalid arguments specified"
+            echo "Usage: $0 [tag] [increment: major|minor|patch|dev] [type: production|development]"
+            exit 1
+          else
+            tag="$1"
+            increment="$2"
+            type="$3"
+          fi
+        else
+          tag="${{ inputs.tag }}"
+          increment="${{ inputs.increment }}"
+          type="${{ inputs.type }}"
         fi
 
-        echo "output=$input" >> "$GITHUB_ENV"
-        echo "output=$input" >> "$GITHUB_OUTPUT"
-        echo "Action received: $input ✅"
-        echo "Action received: $input ✅" >> "$GITHUB_STEP_SUMMARY"
+        if [ -z "${{ inputs.tag }}" ]; then
+          echo 'Error: input tag value cannot be empty ❌'; exit 1
+        fi
+
+        # Validate: increment
+        if	[ ! "$increment" = 'major' ] && \
+            [ ! "$increment" = 'minor' ] && \
+            [ ! "$increment" = 'patch' ] && \
+            [ ! "$increment" = 'dev' ]; then
+           echo 'Error: invalid increment input ❌'; exit 1
+        fi
+
+        # Validate: type
+        if	[ ! "$type" = 'production' ] && \
+            [ ! "$type" = 'development' ]; then
+           echo 'Error: invalid type input ❌'; exit 1
+        fi
+
+        echo "Tag: $tag 🏷️"
+        echo "Increment: $increment"
+        echo "Type: $type"
+
+        # If present, strip the leading "v" character
+        if [[ "$tag" == v* ]] || [[ "$tag" == V* ]]; then
+          leading_char_provided='true'
+          tag="${tag:1}"
+        fi
+
+        # Regular expression to match semantic tag
+        pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+
+        # Validate supplied (and parsed) tag
+        if ! [[ "$tag" =~ "$pattern" ]]; then
+          echo 'Error: provided tag not semantic ❌'; exit 1
+        else
+          echo "Numeric tag: $tag #️⃣"
+        fi
+
+        regex='[^0-9]*\([0-9]*\)[.]\([0-9]*\)[.]\([0-9]*\)\([0-9A-Za-z-]*\)'
+        major=$(echo "$tag" | sed -e "s#$regex#\1#")
+        minor=$(echo "$tag" | sed -e "s#$regex#\2#")
+        patch=$(echo "$tag" | sed -e "s#$regex#\3#")
+        echo "Current versioning [ major: $major  minor: $minor  patch: $patch ]"
+
+        case "$type" in
+          major)
+            major=$((major+1))
+            minor="0"
+            patch="0"
+            ;;
+          minor)
+            minor=$((minor+1))
+            patch="0"
+            ;;
+          patch)
+            patch=$((patch+1))
+            ;;
+        esac
+
+        # Start development build number at zero
+        dev_count=0
+        next_tag="$manjor.$minor.$patch-dev$dev_count"
+        echo "Starting from: $next_tag"
+
+        # Assume tag is NOT safe to use
+        this_tag_conflicts='true"'
+        while [ "$this_tag_conflicts" = 'true' ]; do
+          match="false"
+          # Development releases start at one
+          dev_count=$((dev_count+1))
+          next_tag="$major.$minor.$patch-dev$dev_count"
+          echo "Checking "v$next_tag" against repository tags"
+          for repo_tag in $(git tag -l); do
+            if [ "v$next_tag" = "$repo_tag" ]; then
+              echo "$next_tag matched to $repo_tag"
+              match='true'
+            fi
+          done
+
+          if [ "$match" = "false" ]; then
+            this_tag_conflicts="false"
+          fi
+        done
+
+        # Set action output values
+        if [ "$leading_char_provided" = 'true' ]; then
+          echo "Increment tag: v$next_tag [$next_tag] 🏷️"
+          echo "tag=v$next_tag" >> "$GITHUB_OUTPUT"
+          echo "tag=v$next_tag" >> "$GITHUB_ENV"
+        else
+          echo "Increment tag: $next_tag 🏷️"
+          echo "tag=$next_tag" >> "$GITHUB_OUTPUT"
+          echo "tag=$next_tag" >> "$GITHUB_ENV"
+        fi
+        echo "numeric_tag=$next_tag" >> "$GITHUB_OUTPUT"
+        echo "numeric_tag=$next_tag" >> "$GITHUB_ENV"
+
+        #SHELLCODEEND

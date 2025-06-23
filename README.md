@@ -28,9 +28,11 @@ steps:
 
 <!-- markdownlint-disable MD013 -->
 
-| Name          | Required | Description  |
-| ------------- | -------- | ------------ |
-| input         | False    | Action input |
+| Name      | Required | Default     | Description                                   |
+| --------- | -------- | ----------- | --------------------------------------------- |
+| tag       | True     |             | Tag string to increment                       |
+| increment | False    | dev         | Tag level to increment: major/minor/patch/dev |
+| type      | False    | development | Incremented tag type: production/development  |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -38,12 +40,12 @@ steps:
 
 <!-- markdownlint-disable MD013 -->
 
-| Name          | Description   |
-| ------------- | ------------- |
-| output        | Action output |
+| Name        | Description                            |
+| ----------- | -------------------------------------- |
+| tag         | Incremented tag string                 |
+| numeric_tag | Numeric tag stripped of any v/V prefix |
 
 <!-- markdownlint-enable MD013 -->
 
-## Implementation Details
-
-## Notes
+Note: if the provided tag has no leading v/V character prefix, the tag and
+numeric_tag output values will be identical.
