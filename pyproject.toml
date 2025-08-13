@@ -1,0 +1,210 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 The Linux Foundation
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[project]
+name = "semantic-tag-increment"
+description = "A Python tool for incrementing semantic version tags with GitHub Actions support"
+readme = "README.md"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Matthew Watkins", email = "mwatkins@linuxfoundation.org"},
+]
+maintainers = [
+    {name = "Matthew Watkins", email = "mwatkins@linuxfoundation.org"},
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: System Administrators",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Version Control",
+    "Topic :: Software Development :: Build Tools",
+    "Topic :: System :: Software Distribution",
+    "Topic :: Utilities",
+]
+keywords = [
+    "semantic-versioning",
+    "semver",
+    "version",
+    "tagging",
+    "github-actions",
+    "release",
+    "ci-cd",
+    "automation",
+]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "typer>=0.16.0",
+    "GitPython>=3.1.0",
+    "PyYAML>=6.0.0",
+]
+dynamic = ["version"]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.2.0",
+    "pytest-cov>=4.1.0",
+    "coverage[toml]>=7.4.3",
+    "hypothesis>=6.99.7",
+]
+dev = [
+    "pytest>=8.2.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.3.0",
+    "pre-commit>=3.6.0",
+    "mypy>=1.8.0",
+    "types-PyYAML>=6.0.0",
+    "coverage[toml]>=7.4.3",
+    "hypothesis>=6.99.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/lfreleng-actions/semantic-tag-increment"
+Repository = "https://github.com/lfreleng-actions/semantic-tag-increment"
+Documentation = "https://github.com/lfreleng-actions/semantic-tag-increment/blob/main/README.md"
+"Bug Tracker" = "https://github.com/lfreleng-actions/semantic-tag-increment/issues"
+
+[project.scripts]
+semantic-tag-increment = "semantic_tag_increment:main"
+
+[tool.pdm]
+version = { source = "file", path = "src/semantic_tag_increment/__init__.py" }
+distribution = true
+package-dir = "src"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["src"]
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--verbose",
+    "--cov",
+    "--cov-report=html"
+]
+markers = [
+    "integration: marks tests as integration tests (deselect with '-m \"not integration\"')",
+    "unit: marks tests as unit tests",
+    "property: marks tests as property-based tests",
+    "slow: marks tests as slow tests (deselect with '-m \"not slow\"')",
+]
+
+[tool.coverage.run]
+source = ["src/semantic_tag_increment"]
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+precision = 2
+
+[tool.coverage.html]
+directory = "coverage_html_report"
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 80
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle errors
+    "F",  # pyflakes
+    "B",  # flake8-bugbear
+    "C4", # flake8-comprehensions
+    "I",  # isort
+    "N",  # pep8-naming
+    "UP", # pyupgrade
+    "W",  # pycodestyle warnings
+    "S",  # flake8-bandit (security checks, replaces standalone bandit)
+    "C90", # mccabe
+]
+ignore = [
+    "E501",  # line too long (handled by formatter)
+    "S101",  # Use of assert detected (acceptable in tests)
+    "S108",  # Probable insecure usage of temporary file or directory (acceptable in tests)
+    "S603",  # subprocess call - check for execution of untrusted input (acceptable in tests)
+    "S607",  # Starting a process with a partial executable path (acceptable in tests)
+    "N806",  # Variable in function should be lowercase (acceptable in tests)
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+docstring-code-format = true
+
+[tool.ruff.lint.isort]
+known-first-party = ["semantic_tag_increment"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"

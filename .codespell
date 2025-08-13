@@ -1,2 +1,8 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
+
+# Codespell configuration file
+# Add words that should be ignored (not typos)
+
+# Legitimate file extensions and technical terms
+edn

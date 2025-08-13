@@ -2,68 +2,573 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
-# Action test/validation workflow
-name: "Test GitHub Action 🧪"
+name: '🧪 Testing'
 
-# yamllint disable-line rule:truthy
+# Workflow triggers
 on:
   workflow_dispatch:
   push:
-    branches: ["main"]
+    branches: ['main']
   pull_request:
-    branches: ["main"]
+    branches: ['main']
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
-permissions: {}
+permissions: read-all
 
 jobs:
-  ### Test the GitHub Action in this Repository ###
-  tests:
-    name: "Test local GitHub Action"
-    runs-on: ubuntu-24.04
+  basic-tests:
+    name: 'Basic String Mode Tests'
+    runs-on: 'ubuntu-latest'
     permissions:
       contents: read
-    timeout-minutes: 10 # Increase this timeout value as needed
+    timeout-minutes: 5
     steps:
-      - name: "Checkout repository"
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
-
-      # Perform setup prior to running test(s)
-      - name: "Testing setup step"
-        shell: bash
-        run: |
-          # Testing setup step
-          echo "Testing setup step"
-          echo "Testing setup step/summary output" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: "Running local action: ${{ github.repository }}"
-        uses: ./
-        with:
-          input: "test input 💬"
-
-      - name: "Validated local action: ${{ github.repository }}"
-        shell: bash
-        run: |
-          # Local action validation
-          echo "Validated local action: ${{ github.repository }}"
-          echo "Validation step summary output" >> "$GITHUB_STEP_SUMMARY"
-
+      # Harden the runner used by this workflow
       # yamllint disable-line rule:line-length
-      - name: "Running local action: ${{ github.repository }} [Override Failure]"
-        uses: ./
-        id: failure
-        continue-on-error: true
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
         with:
-          invalid_input: "Some garbage"
+          egress-policy: 'audit'
 
-      # Failure testing is also important
-      - name: "Error if step above did NOT fail"
-        if: steps.failure.outcome == 'success'
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Basic increment: patch"
+        id: basic-patch
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'patch'
+
+      - name: "Basic increment: minor"
+        id: basic-minor
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'minor'
+
+      - name: "Basic increment: major"
+        id: basic-major
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'major'
+
+      - name: "Basic increment: prerelease"
+        id: basic-prerelease
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'prerelease'
+
+      - name: "Basic increment: dev"
+        id: basic-dev
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'dev'
+
+      - name: "Validate basic test results"
         shell: bash
         run: |
-          # Error if step above did NOT fail
-          echo "Error: previous test step did NOT fail ❌"
-          exit 1
+          echo "🔍 Validating basic test results..."
+
+          # Check patch increment
+          if [ "${{ steps.basic-patch.outputs.tag }}" != "v1.2.4" ]; then
+            echo "❌ Patch increment failed: expected v1.2.4, got ${{ steps.basic-patch.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Patch: ${{ steps.basic-patch.outputs.tag }}"
+
+          # Check minor increment
+          if [ "${{ steps.basic-minor.outputs.tag }}" != "v1.3.0" ]; then
+            echo "❌ Minor increment failed: expected v1.3.0, got ${{ steps.basic-minor.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Minor: ${{ steps.basic-minor.outputs.tag }}"
+
+          # Check major increment
+          if [ "${{ steps.basic-major.outputs.tag }}" != "v2.0.0" ]; then
+            echo "❌ Major increment failed: expected v2.0.0, got ${{ steps.basic-major.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Major: ${{ steps.basic-major.outputs.tag }}"
+
+          # Check prerelease increment (should add .1 or similar)
+          case "${{ steps.basic-prerelease.outputs.tag }}" in
+            v1.2.4-dev.1|v1.2.4-alpha.1|v1.2.4-beta.1|v1.2.4-rc.1)
+              echo "✅ Prerelease: ${{ steps.basic-prerelease.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Prerelease increment failed: unexpected format ${{ steps.basic-prerelease.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+          # Check dev increment (similar to prerelease)
+          case "${{ steps.basic-dev.outputs.tag }}" in
+            v1.2.4-dev.1|v1.2.4-alpha.1|v1.2.4-beta.1|v1.2.4-rc.1)
+              echo "✅ Dev: ${{ steps.basic-dev.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Dev increment failed: unexpected format ${{ steps.basic-dev.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+  prerelease-tests:
+    name: 'Prerelease Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Prerelease with type: alpha"
+        id: prerelease-alpha
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'prerelease'
+          prerelease_type: 'alpha'
+
+      - name: "Prerelease with type: beta"
+        id: prerelease-beta
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'prerelease'
+          prerelease_type: 'beta'
+
+      - name: "Prerelease with type: rc"
+        id: prerelease-rc
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'prerelease'
+          prerelease_type: 'rc'
+
+      - name: "Increment existing prerelease"
+        id: increment-prerelease
+        uses: ./
+        with:
+          tag: 'v1.2.3-alpha.1'
+          increment: 'prerelease'
+
+      - name: "Validate prerelease results"
+        shell: bash
+        run: |
+          echo "🔍 Validating prerelease results..."
+
+          # Alpha prerelease should contain alpha
+          case "${{ steps.prerelease-alpha.outputs.tag }}" in
+            *alpha*)
+              echo "✅ Alpha prerelease: ${{ steps.prerelease-alpha.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Alpha prerelease failed: expected alpha in tag, got ${{ steps.prerelease-alpha.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+          # Beta prerelease should contain beta
+          case "${{ steps.prerelease-beta.outputs.tag }}" in
+            *beta*)
+              echo "✅ Beta prerelease: ${{ steps.prerelease-beta.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Beta prerelease failed: expected beta in tag, got ${{ steps.prerelease-beta.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+          # RC prerelease should contain rc
+          case "${{ steps.prerelease-rc.outputs.tag }}" in
+            *rc*)
+              echo "✅ RC prerelease: ${{ steps.prerelease-rc.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ RC prerelease failed: expected rc in tag, got ${{ steps.prerelease-rc.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+          # Increment existing prerelease should bump the number
+          case "${{ steps.increment-prerelease.outputs.tag }}" in
+            v1.2.3-alpha.2|v1.2.3-alpha.1.1)
+              echo "✅ Increment prerelease: ${{ steps.increment-prerelease.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Increment prerelease failed: unexpected result ${{ steps.increment-prerelease.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+  edge-case-tests:
+    name: 'Edge Case Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "No prefix tag"
+        id: no-prefix
+        uses: ./
+        with:
+          tag: '1.2.3'
+          increment: 'patch'
+
+      - name: "Complex prerelease"
+        id: complex-prerelease
+        uses: ./
+        with:
+          tag: 'v1.2.3-alpha.1+build.123'
+          increment: 'prerelease'
+
+      - name: "Zero version"
+        id: zero-version
+        uses: ./
+        with:
+          tag: 'v0.0.1'
+          increment: 'patch'
+
+      - name: "Large version numbers"
+        id: large-version
+        uses: ./
+        with:
+          tag: 'v10.20.30'
+          increment: 'minor'
+
+      - name: "Complex prerelease with custom type"
+        id: custom-prerelease
+        uses: ./
+        with:
+          tag: 'v1.0.0'
+          increment: 'prerelease'
+          prerelease_type: 'snapshot'
+
+      - name: "Version with build metadata"
+        id: build-metadata
+        uses: ./
+        with:
+          tag: 'v1.2.3+20230101'
+          increment: 'patch'
+
+      - name: "Validate edge case results"
+        shell: bash
+        run: |
+          echo "🔍 Validating edge case results..."
+
+          # No prefix should work
+          if [ "${{ steps.no-prefix.outputs.tag }}" != "1.2.4" ]; then
+            echo "❌ No prefix failed: expected 1.2.4, got ${{ steps.no-prefix.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ No prefix: ${{ steps.no-prefix.outputs.tag }}"
+
+          # Complex prerelease should increment
+          case "${{ steps.complex-prerelease.outputs.tag }}" in
+            v1.2.3-alpha.2*|v1.2.3-alpha.1.1*)
+              echo "✅ Complex prerelease: ${{ steps.complex-prerelease.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Complex prerelease failed: unexpected ${{ steps.complex-prerelease.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+          # Zero version should work
+          if [ "${{ steps.zero-version.outputs.tag }}" != "v0.0.2" ]; then
+            echo "❌ Zero version failed: expected v0.0.2, got ${{ steps.zero-version.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Zero version: ${{ steps.zero-version.outputs.tag }}"
+
+          # Large version numbers
+          if [ "${{ steps.large-version.outputs.tag }}" != "v10.21.0" ]; then
+            echo "❌ Large version failed: expected v10.21.0, got ${{ steps.large-version.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Large version: ${{ steps.large-version.outputs.tag }}"
+
+          # Custom prerelease type should be included
+          case "${{ steps.custom-prerelease.outputs.tag }}" in
+            *snapshot*)
+              echo "✅ Custom prerelease: ${{ steps.custom-prerelease.outputs.tag }}"
+              ;;
+            *)
+              echo "❌ Custom prerelease failed: expected snapshot in tag, got ${{ steps.custom-prerelease.outputs.tag }}"
+              exit 1
+              ;;
+          esac
+
+          # Build metadata should be handled correctly
+          if [ "${{ steps.build-metadata.outputs.tag }}" != "v1.2.4" ]; then
+            echo "❌ Build metadata failed: expected v1.2.4, got ${{ steps.build-metadata.outputs.tag }}"
+            exit 1
+          fi
+          echo "✅ Build metadata: ${{ steps.build-metadata.outputs.tag }}"
+
+  error-handling-tests:
+    name: 'Error Handling Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Invalid tag format"
+        id: invalid-tag
+        continue-on-error: true
+        uses: ./
+        with:
+          tag: 'invalid-version'
+          increment: 'patch'
+
+      - name: "Invalid increment type"
+        id: invalid-increment
+        continue-on-error: true
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'invalid'
+
+      - name: "Invalid path"
+        id: invalid-path
+        continue-on-error: true
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'patch'
+          path: '/nonexistent/path'
+
+      - name: "Validate error handling"
+        shell: bash
+        run: |
+          echo "🔍 Validating error handling..."
+
+          # All error tests should fail
+          if [ "${{ steps.invalid-tag.outcome }}" = "success" ]; then
+            echo "❌ Invalid tag test should have failed"
+            exit 1
+          fi
+          echo "✅ Invalid tag correctly failed"
+
+          if [ "${{ steps.invalid-increment.outcome }}" = "success" ]; then
+            echo "❌ Invalid increment test should have failed"
+            exit 1
+          fi
+          echo "✅ Invalid increment correctly failed"
+
+          if [ "${{ steps.invalid-path.outcome }}" = "success" ]; then
+            echo "❌ Invalid path test should have failed"
+            exit 1
+          fi
+          echo "✅ Invalid path correctly failed"
+
+  output-tests:
+    name: 'Output Format Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: "Test with V prefix"
+        id: v-prefix
+        uses: ./
+        with:
+          tag: 'V1.2.3'
+          increment: 'patch'
+
+      - name: "Test without prefix"
+        id: no-prefix
+        uses: ./
+        with:
+          tag: '1.2.3'
+          increment: 'minor'
+
+      - name: "Validate outputs"
+        shell: bash
+        run: |
+          echo "🔍 Validating output formats..."
+
+          # Test outputs for V prefix
+          echo "V prefix full: ${{ steps.v-prefix.outputs.tag }}"
+          echo "V prefix numeric: ${{ steps.v-prefix.outputs.numeric_tag }}"
+
+          # Test outputs for no prefix
+          echo "No prefix full: ${{ steps.no-prefix.outputs.tag }}"
+          echo "No prefix numeric: ${{ steps.no-prefix.outputs.numeric_tag }}"
+
+          # Validate numeric outputs don't have prefixes
+          case "${{ steps.v-prefix.outputs.numeric_tag }}" in
+            [0-9]*)
+              echo "✅ V prefix numeric output correct: ${{ steps.v-prefix.outputs.numeric_tag }}"
+              ;;
+            *)
+              echo "❌ V prefix numeric should not have prefix: ${{ steps.v-prefix.outputs.numeric_tag }}"
+              exit 1
+              ;;
+          esac
+
+          case "${{ steps.no-prefix.outputs.numeric_tag }}" in
+            [0-9]*)
+              echo "✅ No prefix numeric output correct: ${{ steps.no-prefix.outputs.numeric_tag }}"
+              ;;
+            *)
+              echo "❌ No prefix numeric should be numeric: ${{ steps.no-prefix.outputs.numeric_tag }}"
+              exit 1
+              ;;
+          esac
+
+  performance-tests:
+    name: 'Performance Tests'
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: read
+    timeout-minutes: 5
+    steps:
+      # Harden the runner used by this workflow
+      # yamllint disable-line rule:line-length
+      - uses: step-security/harden-runner@6c439dc8bdf85cadbbce9ed30d1c7b959517bc49  # v2.12.2
+        with:
+          egress-policy: 'audit'
+
+      - name: 'Checkout repository'
+        # yamllint disable rule:line-length
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      # Test with conflict checking disabled for speed
+      - name: "Fast execution without git checks"
+        id: fast-execution
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'patch'
+          check_tags: 'false'
+
+      # Test with conflict checking enabled
+      - name: "Execution with git checks"
+        id: git-checks
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'minor'
+          check_tags: 'true'
+
+      # Test with debug enabled
+      - name: "Debug mode execution"
+        id: debug-mode
+        uses: ./
+        with:
+          tag: 'v1.2.3'
+          increment: 'major'
+          debug: 'true'
+
+      - name: "Validate performance results"
+        shell: bash
+        run: |
+          echo "🔍 Validating performance test results..."
+
+          # All should complete successfully
+          echo "✅ Fast execution: ${{ steps.fast-execution.outputs.tag }}"
+          echo "✅ Git checks: ${{ steps.git-checks.outputs.tag }}"
+          echo "✅ Debug mode: ${{ steps.debug-mode.outputs.tag }}"
+
+          # Results should be as expected
+          if [ "${{ steps.fast-execution.outputs.tag }}" != "v1.2.4" ]; then
+            echo "❌ Fast execution failed"
+            exit 1
+          fi
+
+          if [ "${{ steps.git-checks.outputs.tag }}" != "v1.3.0" ]; then
+            echo "❌ Git checks failed"
+            exit 1
+          fi
+
+          if [ "${{ steps.debug-mode.outputs.tag }}" != "v2.0.0" ]; then
+            echo "❌ Debug mode failed"
+            exit 1
+          fi
+
+  test-summary:
+    name: 'Test Summary'
+    runs-on: 'ubuntu-latest'
+    timeout-minutes: 2
+    needs:
+      - basic-tests
+      - prerelease-tests
+      - edge-case-tests
+      - error-handling-tests
+      - output-tests
+      - performance-tests
+    if: always()
+    steps:
+      - name: 'Print test summary'
+        shell: bash
+        run: |
+          echo "## 🧪 Test Summary"
+          echo ""
+          echo "| Test Suite | Result |"
+          echo "|------------|--------|"
+          echo "| Basic Tests | ${{ needs.basic-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo "| Prerelease Tests | ${{ needs.prerelease-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo "| Edge Case Tests | ${{ needs.edge-case-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo "| Error Handling Tests | ${{ needs.error-handling-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo "| Output Tests | ${{ needs.output-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo "| Performance Tests | ${{ needs.performance-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo ""
+
+          # Exit with error if any test failed
+          if [ "${{ needs.basic-tests.result }}" != "success" ] || \
+             [ "${{ needs.prerelease-tests.result }}" != "success" ] || \
+             [ "${{ needs.edge-case-tests.result }}" != "success" ] || \
+             [ "${{ needs.error-handling-tests.result }}" != "success" ] || \
+             [ "${{ needs.output-tests.result }}" != "success" ] || \
+             [ "${{ needs.performance-tests.result }}" != "success" ]; then
+            echo "❌ Some tests failed!"
+            exit 1
+          else
+            echo "✅ All tests passed!"
+          fi

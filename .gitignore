@@ -2,6 +2,8 @@
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
 # Temporary and binary files
+__pypackages__
+.pdm-python
 *~
 *.py[cod]
 *.so

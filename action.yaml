@@ -2,36 +2,160 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2025 The Linux Foundation
 
-# actions-template
-name: "🛠️ Actions Template"
-description: "Description of action"
-# Any relevant notes/observations can go here
+# semantic-tag-increment
+name: '🏷️ Increment Semantic Tag'
+description: 'Increments semantic version tags'
+# Supports complex pre-release patterns
 
 inputs:
-  input:
-    description: "Description of input"
+  tag:
+    description: 'The existing semantic tag to be incremented'
     required: true
+  increment:
+    description: 'Increment type: major, minor, patch, prerelease, dev'
+    required: false
+    default: 'dev'
+  prerelease_type:
+    description: 'Type of prerelease identifier (dev, alpha, beta, rc, etc.)'
+    required: false
+  path:
+    description: 'Directory location for git operations'
+    required: false
+    default: '.'
+  debug:
+    description: 'Enable verbose debug output'
+    required: false
+    default: 'false'
+  check_tags:
+    description: 'Whether to fetch and check against repository tags'
+    required: false
+    default: 'true'
+  preserve_metadata:
+    description: 'Whether to preserve build metadata during version increments'
+    required: false
+    default: 'false'
+  fetch_timeout:
+    description: 'Timeout in seconds for git remote fetch operations'
+    required: false
+    default: '120'
 
 outputs:
-  output:
-    description: "Description of output"
-    value: ${{ steps.code.outputs.output }}
+  tag:
+    description: 'The incremented tag string with any original prefix'
+    value: "${{ steps.increment.outputs.tag }}"
+  numeric_tag:
+    description: 'Numeric tag stripped of any v/V prefix'
+    value: "${{ steps.increment.outputs.numeric_tag }}"
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
-    - name: "Friendly Name"
-      id: code
+    - name: 'Setup action/environment'
       shell: bash
       run: |
-        # Friendly Name
-        input="${{ inputs.input }}"
-        if [ -z "$input" ]; then
-          echo "Error: mandatory input was not set/configured ❌"
+        # Setup action/environment
+
+        # Verify path is a valid directory
+        if [ ! -d "${{ inputs.path }}" ]; then
+          echo 'Error: invalid path/directory ${{ inputs.path }} ❌'
           exit 1
         fi
 
-        echo "output=$input" >> "$GITHUB_ENV"
-        echo "output=$input" >> "$GITHUB_OUTPUT"
-        echo "Action received: $input ✅"
-        echo "Action received: $input ✅" >> "$GITHUB_STEP_SUMMARY"
+    - name: 'Setup Python'
+      # yamllint disable rule:line-length
+      uses: actions/setup-python@f677139bbe7f9c59b41e40162b753c062f5d49a3 # v5.3.0
+      with:
+        python-version-file: "pyproject.toml"
+        # No automatic caching
+
+    # Manual caching with proper paths and key
+    - name: Cache pip packages
+      uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+      id: pip-cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-python-${{ hashFiles('**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-python-
+
+    - name: 'Cache debug info'
+      if: always()
+      shell: bash
+      # yamllint disable rule:line-length
+      run: |
+        echo "Cache Hit: ${{ steps.pip-cache.outputs.cache-hit }}"
+        echo "Runner OS: ${{ runner.os }}"
+        echo "Cache Key: ${{ runner.os }}-python-${{ hashFiles('**/pyproject.toml') }}"
+
+    # yamllint disable rule:line-length
+    - name: 'Install semantic-tag-increment'
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+
+        # Clean install the package
+        echo "Installing from ${{ github.action_path }}"
+        python -m pip install "${{ github.action_path }}"
+
+    - name: 'Increment semantic tag'
+      id: increment
+      shell: bash
+      env:
+        INPUT_TAG: "${{ inputs.tag }}"
+        INPUT_INCREMENT: "${{ inputs.increment }}"
+        INPUT_PRERELEASE_TYPE: "${{ inputs.prerelease_type }}"
+        INPUT_PATH: "${{ inputs.path }}"
+        INPUT_CHECK_TAGS: "${{ inputs.check_tags }}"
+        INPUT_PRESERVE_METADATA: "${{ inputs.preserve_metadata }}"
+        INPUT_FETCH_TIMEOUT: "${{ inputs.fetch_timeout }}"
+      run: |
+        # Increment semantic tag
+
+        # Set error handling
+        set -e
+
+        # Validate required tag input
+        if [ -z "$INPUT_TAG" ] || [ "$INPUT_TAG" = "" ]; then
+          echo "Error: tag input is required ❌"
+          exit 1
+        fi
+
+        # Validate increment type
+        case "$INPUT_INCREMENT" in
+          major|minor|patch|prerelease|dev)
+            # Valid increment type
+            ;;
+          *)
+            echo "Error: invalid increment type '$INPUT_INCREMENT' ❌"
+            echo 'Valid types: major, minor, patch, prerelease, dev'
+            exit 1
+            ;;
+        esac
+
+        # Run the semantic tag increment tool
+        # Tool automatically detects GitHub Actions mode and writes outputs
+
+        # Build the command with required tag parameter
+        CMD="semantic-tag-increment --tag \"$INPUT_TAG\" --increment \"$INPUT_INCREMENT\" --path \"$INPUT_PATH\""
+
+        # Add prerelease type if provided
+        if [ -n "$INPUT_PRERELEASE_TYPE" ]; then
+          CMD="$CMD --prerelease-type \"$INPUT_PRERELEASE_TYPE\""
+        fi
+
+        # Handle conflict checking based on check_tags setting
+        if [ "$INPUT_CHECK_TAGS" = "false" ]; then
+          CMD="$CMD --no-check-conflicts"
+        else
+          CMD="$CMD --check-conflicts"
+        fi
+
+        # Handle metadata preservation setting
+        if [ "$INPUT_PRESERVE_METADATA" = "true" ]; then
+          CMD="$CMD --preserve-metadata"
+        else
+          CMD="$CMD --no-preserve-metadata"
+        fi
+
+        # Execute the command
+        eval "$CMD"
