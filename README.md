@@ -223,15 +223,15 @@ jobs:
 
 <!-- markdownlint-disable MD013 -->
 
-| Input | Description | Required | Default |
-|-------|-------------|----------|---------|
-| `tag` | The existing semantic tag for incrementing | Yes | - |
-| `increment` | Increment type: major, minor, patch, prerelease, dev | No | `dev` |
-| `prerelease_type` | Prerelease type (alpha, beta, rc, etc.) | No | - |
-| `path` | Directory location for git operations | No | `.` |
-| `debug` | Enable verbose debug output | No | `false` |
-| `check_tags` | Check against existing repository tags | No | `true` |
-| `preserve_metadata` | Preserve build metadata during increments | No | `false` |
+| Input               | Description                                          | Required | Default |
+| ------------------- | ---------------------------------------------------- | -------- | ------- |
+| `tag`               | The existing semantic tag for incrementing           | Yes      | -       |
+| `increment`         | Increment type: major, minor, patch, prerelease, dev | No       | `dev`   |
+| `prerelease_type`   | Prerelease type (alpha, beta, rc, etc.)              | No       | -       |
+| `path`              | Directory location for git operations                | No       | `.`     |
+| `debug`             | Enable verbose debug output                          | No       | `false` |
+| `check_tags`        | Check against existing repository tags               | No       | `true`  |
+| `preserve_metadata` | Preserve build metadata during increments            | No       | `false` |
 
 <!-- markdownlint-enable MD013 -->
 
@@ -239,10 +239,10 @@ jobs:
 
 <!-- markdownlint-disable MD013 -->
 
-| Output | Description |
-|--------|-------------|
-| `tag` | The incremented tag string with any original prefix |
-| `numeric_tag` | Numeric tag stripped of any v/V prefix |
+| Output        | Description                                         |
+| ------------- | --------------------------------------------------- |
+| `tag`         | The incremented tag string with any original prefix |
+| `numeric_tag` | Numeric tag stripped of any v/V prefix              |
 
 <!-- markdownlint-enable MD013 -->
 
