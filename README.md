@@ -105,7 +105,8 @@ semantic-tag-increment --tag "v1.2.3+build.123" --increment "patch"
 
 #### Validation Mode
 
-Use the `--validate` flag to check if a tag is a valid semantic version without incrementing:
+Use the `--validate` flag to check if a tag is a valid semantic version without
+incrementing:
 
 ```bash
 # Validate basic version
