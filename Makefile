@@ -44,7 +44,7 @@ format: ## Format code with ruff
 	uv run ruff check --fix src/ tests/
 
 pre-commit: ## Run pre-commit hooks on all files
-	pre-commit run --all-files
+	uv run pre-commit run --all-files
 
 # Coverage targets
 coverage: ## Generate coverage report
@@ -111,7 +111,7 @@ docs-serve: ## Serve documentation locally
 # Release testing
 release-test: ## Test release process
 	uv build
-	python -m twine check dist/*
+	uv run python -m twine check dist/*
 	@echo "Release test complete. Ready for PyPI upload."
 
 # Comprehensive target
@@ -165,13 +165,13 @@ examples: ## Run example commands
 debug-info: ## Show debug information
 	@echo "=== Debug Information ==="
 	@echo "Python version:"
-	python --version
+	uv run python --version
 	@echo ""
 	@echo "uv version:"
 	uv --version || echo "uv not installed"
 	@echo ""
 	@echo "Package location:"
-	python -c "import semantic_tag_increment; print(semantic_tag_increment.__file__)" 2>/dev/null || echo "Package not installed"
+	uv run python -c "import semantic_tag_increment; print(semantic_tag_increment.__file__)" 2>/dev/null || echo "Package not installed"
 	@echo ""
 	@echo "Dependencies:"
-	uv pip list || pip list | grep -E "(typer|semantic)"
+	@ (command -v uv >/dev/null 2>&1 && uv pip list || pip list 2>/dev/null || true) | grep -E "(typer|semantic)" || true

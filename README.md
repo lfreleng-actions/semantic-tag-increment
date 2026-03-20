@@ -46,20 +46,28 @@ pip install semantic-tag-increment
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) then run:
 
 ```bash
-git clone https://github.com/your-org/semantic-tag-increment.git
+git clone https://github.com/lfreleng-actions/semantic-tag-increment.git
 cd semantic-tag-increment
 uv sync
 ```
+
+> **Note:** After `uv sync`, use `uv run` to invoke commands (e.g.
+> `uv run semantic-tag-increment --help`), or activate the virtual
+> environment first with `source .venv/bin/activate`.
 
 ### Development Installation
 
 Install [uv](https://docs.astral.sh/uv/getting-started/installation/) then run:
 
 ```bash
-git clone https://github.com/your-org/semantic-tag-increment.git
+git clone https://github.com/lfreleng-actions/semantic-tag-increment.git
 cd semantic-tag-increment
 uv sync --all-extras
 ```
+
+> **Note:** Prefix commands with `uv run` (e.g.
+> `uv run semantic-tag-increment`, `uv run pytest`), or activate the
+> virtual environment first with `source .venv/bin/activate`.
 
 ## Usage
 
@@ -176,7 +184,7 @@ jobs:
 
       - name: Increment patch version
         id: increment
-        uses: your-org/semantic-tag-increment@v1
+        uses: lfreleng-actions/semantic-tag-increment@v1
         with:
           tag: 'v1.2.3'
           increment: 'patch'
@@ -192,7 +200,7 @@ jobs:
 ```yaml
 # Increment with pre-release type
 - name: Create alpha release
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3'
     increment: 'prerelease'
@@ -200,7 +208,7 @@ jobs:
 
 # Increment with conflict checking disabled
 - name: Fast increment
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3'
     increment: 'minor'
@@ -208,7 +216,7 @@ jobs:
 
 # Increment in a subdirectory
 - name: Increment with custom path
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3'
     increment: 'patch'
@@ -216,7 +224,7 @@ jobs:
 
 # Preserve build metadata during increment
 - name: Increment preserving metadata
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3+build.123'
     increment: 'patch'
@@ -316,14 +324,14 @@ With conflict checking enabled, the tool:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/semantic-tag-increment.git
+git clone https://github.com/lfreleng-actions/semantic-tag-increment.git
 cd semantic-tag-increment
 
 # Install in development mode with all dependencies
 uv sync --all-extras
 
 # Set up pre-commit hooks
-pre-commit install
+uv run pre-commit install
 ```
 
 ### Dependency management
@@ -403,7 +411,7 @@ jobs:
 
       - name: Increment version
         id: increment
-        uses: your-org/semantic-tag-increment@v1
+        uses: lfreleng-actions/semantic-tag-increment@v1
         with:
           tag: ${{ steps.current.outputs.tag }}
           increment: 'patch'
@@ -471,6 +479,6 @@ This project uses the Apache License 2.0 - see the [LICENSE](LICENSE) file for d
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/semantic-tag-increment/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/semantic-tag-increment/discussions)
+- **Issues**: [GitHub Issues](https://github.com/lfreleng-actions/semantic-tag-increment/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/lfreleng-actions/semantic-tag-increment/discussions)
 - **Documentation**: This README and inline code documentation
