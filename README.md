@@ -43,18 +43,22 @@ pip install semantic-tag-increment
 
 ### From Source
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) then run:
+
 ```bash
 git clone https://github.com/your-org/semantic-tag-increment.git
 cd semantic-tag-increment
-pip install .
+uv sync
 ```
 
 ### Development Installation
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) then run:
+
 ```bash
 git clone https://github.com/your-org/semantic-tag-increment.git
 cd semantic-tag-increment
-pip install -e .
+uv sync --all-extras
 ```
 
 ## Usage
@@ -105,8 +109,8 @@ semantic-tag-increment --tag "v1.2.3+build.123" --increment "patch"
 
 #### Validation Mode
 
-Use the `--validate` flag to check if a tag is a valid semantic version without
-incrementing:
+Use the `--validate` flag to check if a tag is a valid
+semantic version without incrementing:
 
 ```bash
 # Validate basic version
@@ -315,46 +319,53 @@ With conflict checking enabled, the tool:
 git clone https://github.com/your-org/semantic-tag-increment.git
 cd semantic-tag-increment
 
-# Install in development mode
-pip install -e .
-
-# Install development dependencies
-pip install -e ".[dev]"
+# Install in development mode with all dependencies
+uv sync --all-extras
 
 # Set up pre-commit hooks
 pre-commit install
 ```
 
+### Dependency management
+
+- **Update dependencies**: Use `uv lock --upgrade` to rebuild
+  and update the `uv.lock` file with the latest compatible
+  versions
+- **Add new dependencies**: Add to `pyproject.toml` then run
+  `uv lock` to update the lock file
+- **Install from lock file**: `uv sync` will use the exact
+  versions from `uv.lock`
+
 ### Testing
 
 ```bash
 # Run unit tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=semantic_tag_increment
+uv run pytest --cov=semantic_tag_increment
 
 # Run integration tests
-pytest tests/test_integration.py
+uv run pytest tests/test_integration.py
 
 # Run performance tests
-pytest tests/test_performance_optimizations.py
+uv run pytest tests/test_performance_optimizations.py
 ```
 
 ### Code Quality
 
 ```bash
 # Format code
-black src/ tests/
+uv run ruff format src/ tests/
 
 # Lint code
-ruff check src/ tests/
+uv run ruff check .
 
 # Type checking
-mypy src/
+uv run mypy src/
 
 # Security checks
-bandit -r src/
+uv run ruff check --select=S src/
 ```
 
 ### Performance

@@ -11,73 +11,70 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 # Installation targets
-install: ## Install package in production mode
-	python -m pip install --upgrade pip
-	python -m pip install .
+install: ## Install package dependencies
+	uv sync
 
 install-dev: ## Install package in development mode with all dependencies
-	python -m pip install --upgrade pip
-	python -m pip install pdm
-	pdm install --dev
+	uv sync --all-extras
 
 # Testing targets
 test: ## Run unit tests
-	pdm run pytest tests/ -v
+	uv run pytest tests/ -v
 
 test-verbose: ## Run tests with verbose output and coverage
-	pdm run pytest tests/ -v --cov=src/semantic_tag_increment --cov-report=term-missing
+	uv run pytest tests/ -v --cov=src/semantic_tag_increment --cov-report=term-missing
 
 test-integration: ## Run integration tests only
-	pdm run pytest tests/test_integration.py -v -m integration
+	uv run pytest tests/test_integration.py -v -m integration
 
 test-unit: ## Run unit tests only
-	pdm run pytest tests/ -v -m "not integration"
+	uv run pytest tests/ -v -m "not integration"
 
 test-property: ## Run property-based tests
-	pdm run pytest tests/ -v -m property
+	uv run pytest tests/ -v -m property
 
 # Code quality targets
 lint: ## Run all linting checks
-	pdm run ruff check src/ tests/
-	pdm run ruff format --check src/ tests/
-	pdm run mypy src/
+	uv run ruff check src/ tests/
+	uv run ruff format --check src/ tests/
+	uv run mypy src/
 
 format: ## Format code with ruff
-	pdm run ruff format src/ tests/
-	pdm run ruff check --fix src/ tests/
+	uv run ruff format src/ tests/
+	uv run ruff check --fix src/ tests/
 
 pre-commit: ## Run pre-commit hooks on all files
 	pre-commit run --all-files
 
 # Coverage targets
 coverage: ## Generate coverage report
-	pdm run pytest tests/ --cov=src/semantic_tag_increment --cov-report=term --cov-report=xml
+	uv run pytest tests/ --cov=src/semantic_tag_increment --cov-report=term --cov-report=xml
 
 coverage-html: ## Generate HTML coverage report
-	pdm run pytest tests/ --cov=src/semantic_tag_increment --cov-report=html
+	uv run pytest tests/ --cov=src/semantic_tag_increment --cov-report=html
 	@echo "Coverage report generated in coverage_html_report/"
 
 # CLI testing targets
 cli-test: ## Test CLI functionality
 	@echo "Testing CLI help commands..."
-	pdm run semantic-tag-increment --help
-	pdm run semantic-tag-increment increment --help
-	pdm run semantic-tag-increment validate --help
-	pdm run semantic-tag-increment suggest --help
+	uv run semantic-tag-increment --help
+	uv run semantic-tag-increment increment --help
+	uv run semantic-tag-increment validate --help
+	uv run semantic-tag-increment suggest --help
 
 	@echo "Testing basic increment operations..."
-	pdm run semantic-tag-increment increment --tag "1.2.3" --increment "patch" --no-check-conflicts
-	pdm run semantic-tag-increment increment --tag "v1.2.3" --increment "minor" --no-check-conflicts
-	pdm run semantic-tag-increment increment --tag "1.2.3" --increment "major" --no-check-conflicts
-	pdm run semantic-tag-increment increment --tag "1.2.3" --increment "prerelease" --no-check-conflicts
+	uv run semantic-tag-increment increment --tag "1.2.3" --increment "patch" --no-check-conflicts
+	uv run semantic-tag-increment increment --tag "v1.2.3" --increment "minor" --no-check-conflicts
+	uv run semantic-tag-increment increment --tag "1.2.3" --increment "major" --no-check-conflicts
+	uv run semantic-tag-increment increment --tag "1.2.3" --increment "prerelease" --no-check-conflicts
 
 	@echo "Testing validation..."
-	pdm run semantic-tag-increment validate --tag "1.2.3"
-	pdm run semantic-tag-increment validate --tag "v1.2.3-alpha.1+build.123"
+	uv run semantic-tag-increment validate --tag "1.2.3"
+	uv run semantic-tag-increment validate --tag "v1.2.3-alpha.1+build.123"
 
 	@echo "Testing complex versions..."
-	pdm run semantic-tag-increment validate --tag "1.2.3----RC-SNAPSHOT.12.9.1--.12+788"
-	pdm run semantic-tag-increment increment --tag "1.0.0-alpha.1" --increment "prerelease" --no-check-conflicts
+	uv run semantic-tag-increment validate --tag "1.2.3----RC-SNAPSHOT.12.9.1--.12+788"
+	uv run semantic-tag-increment increment --tag "1.0.0-alpha.1" --increment "prerelease" --no-check-conflicts
 
 action-test: ## Test GitHub Action functionality
 	@echo "Testing action with temporary files..."
@@ -85,12 +82,12 @@ action-test: ## Test GitHub Action functionality
 
 # Security targets
 security-audit: ## Run security audit
-	pdm run ruff check --select=S src/ tests/
+	uv run ruff check --select=S src/ tests/
 	@echo "Security audit complete using Ruff's security checks"
 
 # Build targets
 build: ## Build package
-	pdm build
+	uv build
 
 clean: ## Clean build artifacts and cache
 	rm -rf build/
@@ -113,7 +110,7 @@ docs-serve: ## Serve documentation locally
 
 # Release testing
 release-test: ## Test release process
-	pdm build
+	uv build
 	python -m twine check dist/*
 	@echo "Release test complete. Ready for PyPI upload."
 
@@ -132,7 +129,7 @@ ci-test: lint test coverage ## Run CI-appropriate tests
 # Performance testing
 perf-test: ## Run performance tests
 	@echo "Running performance tests..."
-	@pdm run python -c "\
+	@uv run python -c "\
 import time; \
 from semantic_tag_increment.parser import SemanticVersion; \
 from semantic_tag_increment.incrementer import VersionIncrementer; \
@@ -153,16 +150,16 @@ examples: ## Run example commands
 	@echo "=== Semantic Tag Increment Examples ==="
 	@echo ""
 	@echo "1. Basic patch increment:"
-	pdm run semantic-tag-increment increment --tag "v1.2.3" --increment "patch" --no-check-conflicts
+	uv run semantic-tag-increment increment --tag "v1.2.3" --increment "patch" --no-check-conflicts
 	@echo ""
 	@echo "2. Prerelease increment:"
-	pdm run semantic-tag-increment increment --tag "1.2.3" --increment "prerelease" --prerelease-type "alpha" --no-check-conflicts
+	uv run semantic-tag-increment increment --tag "1.2.3" --increment "prerelease" --prerelease-type "alpha" --no-check-conflicts
 	@echo ""
 	@echo "3. Complex version validation:"
-	pdm run semantic-tag-increment validate --tag "1.2.3----RC-SNAPSHOT.12.9.1--.12+788"
+	uv run semantic-tag-increment validate --tag "1.2.3----RC-SNAPSHOT.12.9.1--.12+788"
 	@echo ""
 	@echo "4. Version suggestions:"
-	pdm run semantic-tag-increment suggest --tag "1.2.3" --increment "prerelease"
+	uv run semantic-tag-increment suggest --tag "1.2.3" --increment "prerelease"
 
 # Debugging target
 debug-info: ## Show debug information
@@ -170,11 +167,11 @@ debug-info: ## Show debug information
 	@echo "Python version:"
 	python --version
 	@echo ""
-	@echo "PDM version:"
-	pdm --version || echo "PDM not installed"
+	@echo "uv version:"
+	uv --version || echo "uv not installed"
 	@echo ""
 	@echo "Package location:"
 	python -c "import semantic_tag_increment; print(semantic_tag_increment.__file__)" 2>/dev/null || echo "Package not installed"
 	@echo ""
 	@echo "Dependencies:"
-	pdm list || pip list | grep -E "(typer|semantic)"
+	uv pip list || pip list | grep -E "(typer|semantic)"
