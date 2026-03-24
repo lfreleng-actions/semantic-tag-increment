@@ -43,19 +43,31 @@ pip install semantic-tag-increment
 
 ### From Source
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) then run:
+
 ```bash
-git clone https://github.com/your-org/semantic-tag-increment.git
+git clone https://github.com/lfreleng-actions/semantic-tag-increment.git
 cd semantic-tag-increment
-pip install .
+uv sync
 ```
+
+> **Note:** After `uv sync`, use `uv run` to invoke commands (e.g.
+> `uv run semantic-tag-increment --help`), or activate the virtual
+> environment first with `source .venv/bin/activate`.
 
 ### Development Installation
 
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) then run:
+
 ```bash
-git clone https://github.com/your-org/semantic-tag-increment.git
+git clone https://github.com/lfreleng-actions/semantic-tag-increment.git
 cd semantic-tag-increment
-pip install -e .
+uv sync --all-extras
 ```
+
+> **Note:** Prefix commands with `uv run` (e.g.
+> `uv run semantic-tag-increment`, `uv run pytest`), or activate the
+> virtual environment first with `source .venv/bin/activate`.
 
 ## Usage
 
@@ -105,8 +117,8 @@ semantic-tag-increment --tag "v1.2.3+build.123" --increment "patch"
 
 #### Validation Mode
 
-Use the `--validate` flag to check if a tag is a valid semantic version without
-incrementing:
+Use the `--validate` flag to check if a tag is a valid
+semantic version without incrementing:
 
 ```bash
 # Validate basic version
@@ -172,7 +184,7 @@ jobs:
 
       - name: Increment patch version
         id: increment
-        uses: your-org/semantic-tag-increment@v1
+        uses: lfreleng-actions/semantic-tag-increment@v1
         with:
           tag: 'v1.2.3'
           increment: 'patch'
@@ -188,7 +200,7 @@ jobs:
 ```yaml
 # Increment with pre-release type
 - name: Create alpha release
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3'
     increment: 'prerelease'
@@ -196,7 +208,7 @@ jobs:
 
 # Increment with conflict checking disabled
 - name: Fast increment
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3'
     increment: 'minor'
@@ -204,7 +216,7 @@ jobs:
 
 # Increment in a subdirectory
 - name: Increment with custom path
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3'
     increment: 'patch'
@@ -212,7 +224,7 @@ jobs:
 
 # Preserve build metadata during increment
 - name: Increment preserving metadata
-  uses: your-org/semantic-tag-increment@v1
+  uses: lfreleng-actions/semantic-tag-increment@v1
   with:
     tag: 'v1.2.3+build.123'
     increment: 'patch'
@@ -312,49 +324,56 @@ With conflict checking enabled, the tool:
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/semantic-tag-increment.git
+git clone https://github.com/lfreleng-actions/semantic-tag-increment.git
 cd semantic-tag-increment
 
-# Install in development mode
-pip install -e .
-
-# Install development dependencies
-pip install -e ".[dev]"
+# Install in development mode with all dependencies
+uv sync --all-extras
 
 # Set up pre-commit hooks
-pre-commit install
+uv run pre-commit install
 ```
+
+### Dependency management
+
+- **Update dependencies**: Use `uv lock --upgrade` to rebuild
+  and update the `uv.lock` file with the latest compatible
+  versions
+- **Add new dependencies**: Add to `pyproject.toml` then run
+  `uv lock` to update the lock file
+- **Install from lock file**: `uv sync` will use the exact
+  versions from `uv.lock`
 
 ### Testing
 
 ```bash
 # Run unit tests
-pytest
+uv run pytest
 
 # Run with coverage
-pytest --cov=semantic_tag_increment
+uv run pytest --cov=semantic_tag_increment
 
 # Run integration tests
-pytest tests/test_integration.py
+uv run pytest tests/test_integration.py
 
 # Run performance tests
-pytest tests/test_performance_optimizations.py
+uv run pytest tests/test_performance_optimizations.py
 ```
 
 ### Code Quality
 
 ```bash
 # Format code
-black src/ tests/
+uv run ruff format src/ tests/
 
 # Lint code
-ruff check src/ tests/
+uv run ruff check .
 
 # Type checking
-mypy src/
+uv run mypy src/
 
 # Security checks
-bandit -r src/
+uv run ruff check --select=S src/
 ```
 
 ### Performance
@@ -392,7 +411,7 @@ jobs:
 
       - name: Increment version
         id: increment
-        uses: your-org/semantic-tag-increment@v1
+        uses: lfreleng-actions/semantic-tag-increment@v1
         with:
           tag: ${{ steps.current.outputs.tag }}
           increment: 'patch'
@@ -460,6 +479,6 @@ This project uses the Apache License 2.0 - see the [LICENSE](LICENSE) file for d
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-org/semantic-tag-increment/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/your-org/semantic-tag-increment/discussions)
+- **Issues**: [GitHub Issues](https://github.com/lfreleng-actions/semantic-tag-increment/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/lfreleng-actions/semantic-tag-increment/discussions)
 - **Documentation**: This README and inline code documentation
