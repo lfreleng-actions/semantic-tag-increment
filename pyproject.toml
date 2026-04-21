@@ -138,6 +138,34 @@ precision = 2
 [tool.coverage.html]
 directory = "coverage_html_report"
 
+[tool.basedpyright]
+include = ["src"]
+pythonVersion = "3.10"
+# basedpyright defaults are extremely strict; relax the warnings that
+# would otherwise require a sweeping refactor of the existing codebase.
+reportDeprecated = "none"
+reportExplicitAny = "none"
+reportAny = "none"
+reportUnknownMemberType = "none"
+reportUnknownVariableType = "none"
+reportUnknownArgumentType = "none"
+reportUnknownParameterType = "none"
+reportUnknownLambdaType = "none"
+reportMissingParameterType = "none"
+reportMissingTypeArgument = "none"
+reportUnannotatedClassAttribute = "none"
+reportImplicitOverride = "none"
+reportImplicitStringConcatenation = "none"
+reportUnnecessaryIsInstance = "none"
+reportUnusedCallResult = "none"
+reportUnusedParameter = "none"
+reportUnusedImport = "none"
+reportUnreachable = "none"
+reportUntypedFunctionDecorator = "none"
+reportUnsafeMultipleInheritance = "none"
+reportReturnType = "none"
+reportMissingSuperCall = "none"
+
 [tool.mypy]
 python_version = "3.10"
 warn_return_any = true

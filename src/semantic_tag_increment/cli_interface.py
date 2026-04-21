@@ -164,7 +164,7 @@ def main_callback(
     # If no tag is provided and not validating or suggesting, show help
     if tag is None:
         typer.echo(ctx.get_help())
-        ctx.exit()
+        raise typer.Exit()
 
     # For increment mode, increment parameter is required
     if increment is None:
