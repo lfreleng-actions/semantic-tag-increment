@@ -27,7 +27,9 @@ class AppContext:
 class ContextDetector:
     """Detects and configures application execution context."""
 
-    CLI_COMMANDS = {"increment", "validate", "suggest", "help", "--help", "-h"}
+    CLI_COMMANDS: frozenset[str] = frozenset(
+        {"increment", "validate", "suggest", "help", "--help", "-h"}
+    )
 
     @staticmethod
     def detect_context() -> AppContext:

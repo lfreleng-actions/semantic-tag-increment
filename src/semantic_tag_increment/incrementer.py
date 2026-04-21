@@ -11,6 +11,7 @@ including smart pre-release handling and various increment strategies.
 import logging
 import re
 from enum import Enum
+from typing import ClassVar
 
 from .parser import SemanticVersion
 
@@ -37,19 +38,24 @@ class VersionIncrementer:
     """
 
     # Safety limits to prevent infinite loops and excessive search attempts
-    MAX_PATCH_ATTEMPTS = 100  # For searching available patch versions
-    MAX_PRERELEASE_ATTEMPTS = 1000  # For searching available prerelease versions
+    MAX_PATCH_ATTEMPTS: ClassVar[int] = 100
+    MAX_PRERELEASE_ATTEMPTS: ClassVar[int] = 1000
 
-    def __init__(self, existing_tags: set[str] | None = None, preserve_metadata: bool = False):
+    def __init__(
+        self,
+        existing_tags: set[str] | None = None,
+        preserve_metadata: bool = False,
+    ):
         """
         Initialize the version incrementer.
 
         Args:
             existing_tags: Set of existing version tags to avoid conflicts
-            preserve_metadata: Whether to preserve build metadata during increments
+            preserve_metadata: Whether to preserve build metadata during
+                increments
         """
-        self.existing_tags = existing_tags or set()
-        self.preserve_metadata = preserve_metadata
+        self.existing_tags: set[str] = existing_tags or set()
+        self.preserve_metadata: bool = preserve_metadata
         # Cache normalized tags for performance optimization
         self._normalized_tags_cache: set[str] | None = None
 
@@ -79,7 +85,9 @@ class VersionIncrementer:
         elif increment_type in (IncrementType.PRERELEASE, IncrementType.DEV):
             return self._increment_prerelease(version, prerelease_type)
         else:
-            raise ValueError(f"Unsupported increment type: {increment_type}")
+            raise ValueError(  # pyright: ignore[reportUnreachable]
+                f"Unsupported increment type: {increment_type}"
+            )
 
     def _increment_major(self, version: SemanticVersion) -> SemanticVersion:
         """Increment the major version and reset minor and patch."""
@@ -569,8 +577,8 @@ class VersionIncrementer:
             return aliases[increment_str]
 
         raise ValueError(
-            f"Invalid increment type: {increment_str}. "
-            f"Valid types: {[t.value for t in IncrementType]}"
+            f"Invalid increment type: {increment_str}."
+            + f" Valid types: {[t.value for t in IncrementType]}"
         )
 
     def suggest_next_version(
@@ -588,7 +596,7 @@ class VersionIncrementer:
         Returns:
             List of suggested next versions in order of preference
         """
-        suggestions = []
+        suggestions: list[SemanticVersion] = []
 
         if increment_type == IncrementType.PRERELEASE:
             # If current version is already a prerelease, suggest the next logical prerelease type
@@ -700,7 +708,7 @@ class VersionIncrementer:
         Returns:
             Set of existing patch numbers
         """
-        patches = set()
+        patches: set[int] = set()
         prefix_pattern = f"{major}.{minor}."
 
         for tag in self.existing_tags:
@@ -726,7 +734,7 @@ class VersionIncrementer:
         Returns:
             Set of existing prerelease numbers
         """
-        numbers = set()
+        numbers: set[int] = set()
         version_prefix = f"{major}.{minor}.{patch}-{prerelease_type}."
 
         for tag in self.existing_tags:

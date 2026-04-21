@@ -11,6 +11,9 @@ with support for complex pre-release and metadata patterns.
 
 import re
 from dataclasses import dataclass
+from typing import ClassVar
+
+from typing_extensions import override
 
 from .exceptions import ErrorReporter
 
@@ -38,17 +41,19 @@ class SemanticVersion:
     # Optimized semantic version regex pattern for better performance
     # Compiled once at class definition for efficiency
     # Based on semver.org specification with performance optimizations
-    SEMVER_PATTERN = re.compile(
-        r"^(?P<prefix>[vV])?"
-        r"(?P<major>0|[1-9]\d*)"
-        r"\.(?P<minor>0|[1-9]\d*)"
-        r"\.(?P<patch>0|[1-9]\d*)"
-        r"(?:-(?P<prerelease>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
-        r"(?:\+(?P<metadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$",
-        re.ASCII  # Use ASCII flag to optimize regex performance for typical version strings.
-                  # This flag restricts the regex to ASCII-only characters, which improves performance
-                  # but makes it unsuitable for version strings containing Unicode characters. Ensure
-                  # that this limitation aligns with your use case before using this flag.
+    # Use ASCII flag to optimise regex performance for typical version
+    # strings. This flag restricts the regex to ASCII-only characters,
+    # which improves performance but makes it unsuitable for version
+    # strings containing Unicode characters. Ensure that this limitation
+    # aligns with your use case before using this flag.
+    SEMVER_PATTERN: ClassVar[re.Pattern[str]] = re.compile(
+        (
+            r"^(?P<prefix>[vV])?(?P<major>0|[1-9]\d*)"
+            + r"\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
+            + r"(?:-(?P<prerelease>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?"
+            + r"(?:\+(?P<metadata>[0-9a-zA-Z-]+(?:\.[0-9a-zA-Z-]+)*))?$"
+        ),
+        re.ASCII,
     )
 
     @classmethod
@@ -65,16 +70,15 @@ class SemanticVersion:
         Raises:
             ValueError: If the version string is not a valid semantic version
         """
-        if not version_string or not isinstance(version_string, str):
+        if not version_string:
             raise ValueError("Version string cannot be empty or None")
 
         # Security check: prevent ReDoS attacks with overly long input
         if len(version_string) > MAX_VERSION_LENGTH:
             ErrorReporter.log_and_raise_security_error(
-                f"Version string too long (max {MAX_VERSION_LENGTH} characters): "
-                f"got {len(version_string)} characters",
+                f"Version string too long (max {MAX_VERSION_LENGTH} characters): got {len(version_string)} characters",
                 "input_length_validation",
-                version_string[:100] + "..." if len(version_string) > 100 else version_string
+                version_string[:100] + "..." if len(version_string) > 100 else version_string,
             )
 
         stripped_version = version_string.strip()
@@ -82,21 +86,17 @@ class SemanticVersion:
         # Additional security check after stripping
         if len(stripped_version) > MAX_VERSION_LENGTH:
             ErrorReporter.log_and_raise_security_error(
-                f"Version string too long after stripping (max {MAX_VERSION_LENGTH} characters): "
-                f"got {len(stripped_version)} characters",
+                f"Version string too long after stripping (max {MAX_VERSION_LENGTH} characters): got {len(stripped_version)} characters",
                 "stripped_length_validation",
-                stripped_version[:100] + "..." if len(stripped_version) > 100 else stripped_version
+                stripped_version[:100] + "..." if len(stripped_version) > 100 else stripped_version,
             )
 
         match = cls.SEMVER_PATTERN.match(stripped_version)
         if not match:
             ErrorReporter.log_and_raise_parse_error(
                 f"Invalid semantic version format: {version_string}",
-                version_string
+                version_string,
             )
-            # This return statement will never be reached due to the exception above
-            # but is needed to satisfy type checker
-            return cls(0, 0, 0)
 
         groups = match.groupdict()
 
@@ -112,11 +112,8 @@ class SemanticVersion:
         except (ValueError, TypeError) as e:
             ErrorReporter.log_and_raise_parse_error(
                 f"Invalid semantic version components: {e}",
-                version_string
+                version_string,
             )
-            # This return statement will never be reached due to the exception above
-            # but is needed to satisfy type checker
-            return cls(0, 0, 0)
 
     @classmethod
     def is_valid(cls, version_string: str) -> bool:
@@ -131,17 +128,18 @@ class SemanticVersion:
         """
         try:
             # Basic safety checks before attempting parse
-            if not version_string or not isinstance(version_string, str):
+            if not version_string:
                 return False
 
             if len(version_string) > MAX_VERSION_LENGTH:
                 return False
 
-            cls.parse(version_string)
+            _ = cls.parse(version_string)
             return True
         except (ValueError, TypeError):
             return False
 
+    @override
     def __str__(self) -> str:
         """Return the complete version string with prefix."""
         return self.to_string(include_prefix=True)
@@ -268,6 +266,7 @@ class SemanticVersion:
 
         return 0
 
+    @override
     def __eq__(self, other: object) -> bool:
         """Check equality based on version precedence (ignoring metadata)."""
         if not isinstance(other, SemanticVersion):
@@ -309,7 +308,7 @@ class SemanticVersion:
             List of tuples: (index, identifier, numeric_value)
             where index is the position in the pre-release identifier list
         """
-        numeric_components = []
+        numeric_components: list[tuple[int, str, int]] = []
         identifiers = self.get_prerelease_identifiers()
 
         for i, identifier in enumerate(identifiers):

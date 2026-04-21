@@ -70,6 +70,7 @@ repos:
           - types-PyYAML>=6.0.0
           - typer>=0.16.0
           - GitPython>=3.1.0
+          - typing_extensions>=4.0.0
 
   - repo: https://github.com/btford/write-good
     rev: ab66ce10136dfad5146e69e70f82a3efac8842c1 # frozen: v1.0.8
@@ -116,6 +117,7 @@ repos:
           - GitPython>=3.1.0
           - PyYAML>=6.0.0
           - typer>=0.16.0
+          - typing_extensions>=4.0.0
 
   - repo: https://github.com/lfreleng-actions/gha-workflow-linter
     rev: a7caf8f3a1a05688d1cee46615ff94def617e5a3  # frozen: v1.0.2

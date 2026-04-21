@@ -10,13 +10,13 @@ and other repository interactions using GitPython for native Git operations.
 
 import logging
 import os
-from typing import Set, Optional
-
-from .exceptions import ErrorReporter, GitOperationError, SecurityError
+from typing import ClassVar
 
 # Import GitPython (required dependency)
 import git
 from git.exc import GitCommandError, InvalidGitRepositoryError
+
+from .exceptions import ErrorReporter, GitOperationError, SecurityError
 
 logger = logging.getLogger(__name__)
 
@@ -28,11 +28,11 @@ class GitOperations:
     """Handles Git repository operations."""
 
     # Default fetch timeout in seconds
-    DEFAULT_FETCH_TIMEOUT = 120
+    DEFAULT_FETCH_TIMEOUT: ClassVar[int] = 120
 
     # Class-level cache for tag operations
-    _tag_cache: dict[str, set[str]] = {}
-    _cache_enabled: bool = True
+    _tag_cache: ClassVar[dict[str, set[str]]] = {}
+    _cache_enabled: ClassVar[bool] = True
 
     @staticmethod
     def _validate_path(path: str) -> str:
@@ -48,11 +48,11 @@ class GitOperations:
         Raises:
             ValueError: If path is invalid or doesn't exist
         """
-        if not path or not isinstance(path, str):
+        if not path:
             ErrorReporter.log_and_raise_security_error(
                 "Path must be a non-empty string",
                 "path_type_validation",
-                str(path)
+                str(path),
             )
 
         # Resolve to absolute path and check if it exists
@@ -61,18 +61,23 @@ class GitOperations:
             ErrorReporter.log_and_raise_security_error(
                 f"Path does not exist: {path}",
                 "path_existence_validation",
-                path
+                path,
             )
         if not os.path.isdir(abs_path):
             ErrorReporter.log_and_raise_security_error(
                 f"Path is not a directory: {path}",
                 "path_directory_validation",
-                path
+                path,
             )
         return abs_path
 
     @staticmethod
-    def get_existing_tags(path_prefix: str = ".", fetch_remote: bool = True, use_cache: bool = True, timeout: Optional[int] = None) -> Set[str]:
+    def get_existing_tags(
+        path_prefix: str = ".",
+        fetch_remote: bool = True,
+        use_cache: bool = True,
+        timeout: int | None = None,
+    ) -> set[str]:
         """
         Get existing git tags from the repository.
 
@@ -80,7 +85,8 @@ class GitOperations:
             path_prefix: Directory path containing the git repository
             fetch_remote: Whether to fetch tags from remote repository
             use_cache: Whether to use cached results if available
-            timeout: Timeout in seconds for remote fetch operations (defaults to DEFAULT_FETCH_TIMEOUT)
+            timeout: Timeout in seconds for remote fetch operations
+                (defaults to ``DEFAULT_FETCH_TIMEOUT``)
 
         Returns:
             Set of existing git tags, or empty set if unable to retrieve
@@ -95,11 +101,17 @@ class GitOperations:
 
         # Check cache first if enabled
         cache_key = f"{validated_path}:{fetch_remote}:{timeout}"
-        if use_cache and GitOperations._cache_enabled and cache_key in GitOperations._tag_cache:
+        if (
+            use_cache
+            and GitOperations._cache_enabled
+            and cache_key in GitOperations._tag_cache
+        ):
             logger.debug(f"Using cached tags for {validated_path}")
             return GitOperations._tag_cache[cache_key]
 
-        tags = GitOperations._get_tags_with_gitpython(validated_path, fetch_remote, timeout)
+        tags = GitOperations._get_tags_with_gitpython(
+            validated_path, fetch_remote, timeout
+        )
 
         # Cache the results if enabled
         if use_cache and GitOperations._cache_enabled:
@@ -109,7 +121,11 @@ class GitOperations:
         return tags
 
     @staticmethod
-    def _get_tags_with_gitpython(path_prefix: str, fetch_remote: bool = True, timeout: Optional[int] = None) -> Set[str]:
+    def _get_tags_with_gitpython(
+        path_prefix: str,
+        fetch_remote: bool = True,
+        timeout: int | None = None,
+    ) -> set[str]:
         """Get tags using GitPython library."""
         try:
             # Try to open the repository
@@ -118,18 +134,26 @@ class GitOperations:
             # Conditionally fetch tags from remote
             if fetch_remote and repo.remotes:
                 try:
-                    fetch_timeout = timeout if timeout is not None else GitOperations.DEFAULT_FETCH_TIMEOUT
-                    repo.remotes.origin.fetch(tags=True, timeout=fetch_timeout)
+                    fetch_timeout = (
+                        timeout
+                        if timeout is not None
+                        else GitOperations.DEFAULT_FETCH_TIMEOUT
+                    )
+                    _ = repo.remotes.origin.fetch(
+                        tags=True, timeout=fetch_timeout
+                    )
                     logger.debug("Fetched latest tags from remote")
                 except Exception as e:
                     logger.debug(f"Could not fetch tags from remote: {e}")
 
             # Get all tags
-            tags = set()
+            tags: set[str] = set()
             for tag_ref in repo.tags:
-                tags.add(tag_ref.name)
+                tags.add(str(tag_ref.name))
 
-            logger.debug(f"Found {len(tags)} existing git tags using GitPython")
+            logger.debug(
+                f"Found {len(tags)} existing git tags using GitPython"
+            )
             return tags
 
         except InvalidGitRepositoryError:
@@ -147,8 +171,8 @@ class GitOperations:
                 details={
                     "original_error_type": type(e).__name__,
                     "path": path_prefix,
-                    "operation": "get_tags_with_gitpython"
-                }
+                    "operation": "get_tags_with_gitpython",
+                },
             )
             logger.warning(f"Git operation failed: {git_error}")
             logger.info(NO_CONFLICT_CHECK_MSG)
@@ -177,7 +201,7 @@ class GitOperations:
     def _is_git_repo_with_gitpython(path_prefix: str) -> bool:
         """Check if directory is a Git repository using GitPython."""
         try:
-            git.Repo(path_prefix, search_parent_directories=True)
+            _ = git.Repo(path_prefix, search_parent_directories=True)
             return True
         except (InvalidGitRepositoryError, Exception):
             return False

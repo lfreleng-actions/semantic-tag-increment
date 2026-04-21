@@ -11,7 +11,7 @@ GitHub Actions usage modes.
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict
+from typing import ClassVar
 
 
 class LoggingConfig:
@@ -69,10 +69,12 @@ class LoggingConfig:
 class SemanticLogger:
     """Utility class for consistent logging with semantic context."""
 
-    _operation_times: Dict[str, float] = {}
+    _operation_times: ClassVar[dict[str, float]] = {}
 
     @staticmethod
-    def operation_start(operation: str, details: Dict[str, Any] | None = None) -> None:
+    def operation_start(
+        operation: str, details: dict[str, object] | None = None
+    ) -> None:
         """
         Log the start of an operation with consistent formatting.
 
@@ -93,7 +95,9 @@ class SemanticLogger:
         SemanticLogger._operation_times[operation] = time.time()
 
     @staticmethod
-    def operation_success(operation: str, result: Dict[str, Any] | None = None) -> None:
+    def operation_success(
+        operation: str, result: dict[str, object] | None = None
+    ) -> None:
         """
         Log successful completion of an operation.
 
@@ -122,7 +126,11 @@ class SemanticLogger:
         logger.info(message)
 
     @staticmethod
-    def operation_error(operation: str, error: Exception, details: Dict[str, Any] | None = None) -> None:
+    def operation_error(
+        operation: str,
+        error: Exception,
+        details: dict[str, object] | None = None,
+    ) -> None:
         """
         Log an operation error with consistent formatting.
 
@@ -165,7 +173,7 @@ class SemanticLogger:
         logger.debug(f"Performance metric: {metric_name} = {value:.3f}{unit}")
 
     @staticmethod
-    def security_event(event_type: str, details: Dict[str, Any]) -> None:
+    def security_event(event_type: str, details: dict[str, object]) -> None:
         """
         Log a security-related event.
 

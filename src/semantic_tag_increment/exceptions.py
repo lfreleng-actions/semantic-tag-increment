@@ -11,21 +11,25 @@ to improve error reporting and debugging throughout the application.
 import functools
 import logging
 import sys
-from typing import Any, Callable, Dict, TypeVar, NoReturn
+from collections.abc import Callable
+from typing import NoReturn, ParamSpec, TypeVar
 
 import click
 import typer
 
 logger = logging.getLogger(__name__)
 
-# Type variable for decorated functions
-F = TypeVar('F', bound=Callable[..., Any])
+# ParamSpec/TypeVar pair for preserving decorated callable signatures.
+P = ParamSpec("P")
+R = TypeVar("R")
 
 
 class SemanticVersionError(Exception):
     """Base exception for all semantic version operations."""
 
-    def __init__(self, message: str, details: dict[str, Any] | None = None):
+    def __init__(
+        self, message: str, details: dict[str, object] | None = None
+    ):
         """
         Initialize semantic version error.
 
@@ -34,74 +38,101 @@ class SemanticVersionError(Exception):
             details: Optional dictionary with additional error details
         """
         super().__init__(message)
-        self.details = details or {}
-        self.message = message
+        self.details: dict[str, object] = details or {}
+        self.message: str = message
 
 
 class ValidationError(SemanticVersionError):
     """Exception raised when validation fails."""
+
     pass
 
 
-class ParseError(ValueError, SemanticVersionError):
-    """Exception raised when parsing semantic version fails."""
-    pass
+class ParseError(  # pyright: ignore[reportUnsafeMultipleInheritance]
+    ValueError, SemanticVersionError
+):
+    """Exception raised when parsing semantic version fails.
+
+    Inherits from both ``ValueError`` (so existing ``except ValueError``
+    handlers continue to work) and ``SemanticVersionError`` (so it
+    participates in the project's typed error hierarchy). The dual
+    base classes share ``Exception`` as a common ancestor and the
+    initialiser below explicitly delegates to ``SemanticVersionError``
+    to set ``message``/``details``.
+    """
+
+    def __init__(
+        self, message: str, details: dict[str, object] | None = None
+    ):
+        """Initialise both parent classes with the supplied message."""
+        SemanticVersionError.__init__(self, message, details)
 
 
 class IncrementError(SemanticVersionError):
     """Exception raised when version increment operation fails."""
+
     pass
 
 
 class GitOperationError(SemanticVersionError):
     """Exception raised when git operations fail."""
+
     pass
 
 
 class ConfigurationError(SemanticVersionError):
     """Exception raised when configuration is invalid."""
+
     pass
 
 
 class SecurityError(SemanticVersionError):
     """Exception raised when security validation fails."""
+
     pass
 
 
 class ProjectDetectionError(SemanticVersionError):
     """Exception raised when project detection fails."""
+
     pass
 
 
 class VersionExtractionError(SemanticVersionError):
     """Exception raised when version extraction fails."""
+
     pass
 
 
-def handle_cli_errors(func: F) -> F:
+def handle_cli_errors(func: Callable[P, R]) -> Callable[P, R]:
     """
     Decorator for CLI command error handling.
 
     Provides consistent error handling and logging for CLI commands.
     """
+
     @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return func(*args, **kwargs)
         except SemanticVersionError as e:
-            return _handle_semantic_error_cli(e, func.__name__)
+            _handle_semantic_error_cli(e, func.__name__)
         except (typer.Exit, click.exceptions.Exit):
             # Re-raise Exit exceptions (including help, etc.)
             raise
         except Exception as e:
-            logger.error(f"Unexpected error in {func.__name__}: {e}", exc_info=True)
+            logger.error(
+                f"Unexpected error in {func.__name__}: {e}", exc_info=True
+            )
             typer.echo(f"Unexpected Error: {e}", err=True)
             raise typer.Exit(1) from e
 
-    return wrapper  # type: ignore[return-value]
+    return wrapper
 
 
-def _handle_semantic_error_cli(error: SemanticVersionError, func_name: str) -> None:
+def _handle_semantic_error_cli(
+    error: SemanticVersionError, func_name: str
+) -> NoReturn:
     """Handle semantic version errors for CLI commands."""
     error_type = type(error).__name__.replace("Error", "")
     logger.error(f"{error_type} error in {func_name}: {error}")
@@ -111,27 +142,28 @@ def _handle_semantic_error_cli(error: SemanticVersionError, func_name: str) -> N
     raise typer.Exit(1) from error
 
 
-def handle_github_actions_errors(func: F) -> F:
+def handle_github_actions_errors(func: Callable[P, R]) -> Callable[P, R]:
     """
     Decorator for GitHub Actions error handling.
 
     Provides consistent error handling for GitHub Actions mode.
     """
+
     @functools.wraps(func)
-    def wrapper(*args: Any, **kwargs: Any) -> Any:
+    def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return func(*args, **kwargs)
         except SemanticVersionError as e:
-            return _handle_semantic_error_gha(e)
+            _handle_semantic_error_gha(e)
         except Exception as e:
             logger.error(f"Unexpected error: {e}", exc_info=True)
             print(f"::error::Unexpected Error: {e}")
             sys.exit(1)
 
-    return wrapper  # type: ignore[return-value]
+    return wrapper
 
 
-def _handle_semantic_error_gha(error: SemanticVersionError) -> None:
+def _handle_semantic_error_gha(error: SemanticVersionError) -> NoReturn:
     """Handle semantic version errors for GitHub Actions."""
     error_type = type(error).__name__.replace("Error", "")
     logger.error(f"{error_type} error: {error}")
@@ -141,7 +173,9 @@ def _handle_semantic_error_gha(error: SemanticVersionError) -> None:
     sys.exit(1)
 
 
-def wrap_validation_error(original_error: Exception, context: str) -> ValidationError:
+def wrap_validation_error(
+    original_error: Exception, context: str
+) -> ValidationError:
     """
     Wrap a generic exception as a ValidationError with context.
 
@@ -157,12 +191,14 @@ def wrap_validation_error(original_error: Exception, context: str) -> Validation
         details={
             "original_error_type": type(original_error).__name__,
             "original_error_message": str(original_error),
-            "context": context
-        }
+            "context": context,
+        },
     )
 
 
-def wrap_parse_error(original_error: Exception, version_string: str) -> ParseError:
+def wrap_parse_error(
+    original_error: Exception, version_string: str
+) -> ParseError:
     """
     Wrap a generic exception as a ParseError with version context.
 
@@ -179,8 +215,8 @@ def wrap_parse_error(original_error: Exception, version_string: str) -> ParseErr
             "original_error_type": type(original_error).__name__,
             "original_error_message": str(original_error),
             "version_string": version_string,
-            "version_length": len(version_string) if version_string else 0
-        }
+            "version_length": len(version_string) if version_string else 0,
+        },
     )
 
 
@@ -188,7 +224,7 @@ def wrap_increment_error(
     original_error: Exception,
     version: str,
     increment_type: str,
-    prerelease_type: str | None = None
+    prerelease_type: str | None = None,
 ) -> IncrementError:
     """
     Wrap a generic exception as an IncrementError with operation context.
@@ -209,12 +245,14 @@ def wrap_increment_error(
             "original_error_message": str(original_error),
             "version": version,
             "increment_type": increment_type,
-            "prerelease_type": prerelease_type
-        }
+            "prerelease_type": prerelease_type,
+        },
     )
 
 
-def wrap_git_error(original_error: Exception, operation: str, path: str = ".") -> GitOperationError:
+def wrap_git_error(
+    original_error: Exception, operation: str, path: str = "."
+) -> GitOperationError:
     """
     Wrap a generic exception as a GitOperationError with operation context.
 
@@ -232,12 +270,14 @@ def wrap_git_error(original_error: Exception, operation: str, path: str = ".") -
             "original_error_type": type(original_error).__name__,
             "original_error_message": str(original_error),
             "operation": operation,
-            "path": path
-        }
+            "path": path,
+        },
     )
 
 
-def wrap_security_error(original_error: Exception, security_check: str, value: str) -> SecurityError:
+def wrap_security_error(
+    original_error: Exception, security_check: str, value: str
+) -> SecurityError:
     """
     Wrap a generic exception as a SecurityError with security context.
 
@@ -256,8 +296,8 @@ def wrap_security_error(original_error: Exception, security_check: str, value: s
             "original_error_message": str(original_error),
             "security_check": security_check,
             "value": value,
-            "value_length": len(value) if isinstance(value, str) else None
-        }
+            "value_length": len(value),
+        },
     )
 
 
@@ -265,7 +305,9 @@ class ErrorReporter:
     """Utility class for consistent error reporting."""
 
     @staticmethod
-    def log_and_raise_validation_error(message: str, details: dict[str, Any] | None = None) -> NoReturn:
+    def log_and_raise_validation_error(
+        message: str, details: dict[str, object] | None = None
+    ) -> NoReturn:
         """Log and raise a validation error."""
         error = ValidationError(message, details)
         logger.error(f"Validation error: {message}")
@@ -274,11 +316,13 @@ class ErrorReporter:
         raise error
 
     @staticmethod
-    def log_and_raise_parse_error(message: str, version_string: str) -> None:
+    def log_and_raise_parse_error(
+        message: str, version_string: str
+    ) -> NoReturn:
         """Log and raise a parse error."""
-        details = {
+        details: dict[str, object] = {
             "version_string": version_string,
-            "version_length": len(version_string) if version_string else 0
+            "version_length": len(version_string) if version_string else 0,
         }
         error = ParseError(message, details)
         logger.error(f"Parse error: {message}")
@@ -290,13 +334,13 @@ class ErrorReporter:
         message: str,
         version: str,
         increment_type: str,
-        prerelease_type: str | None = None
-    ) -> None:
+        prerelease_type: str | None = None,
+    ) -> NoReturn:
         """Log and raise an increment error."""
-        details = {
+        details: dict[str, object] = {
             "version": version,
             "increment_type": increment_type,
-            "prerelease_type": prerelease_type
+            "prerelease_type": prerelease_type,
         }
         error = IncrementError(message, details)
         logger.error(f"Increment error: {message}")
@@ -304,11 +348,13 @@ class ErrorReporter:
         raise error
 
     @staticmethod
-    def log_and_raise_git_error(message: str, operation: str, path: str = ".") -> None:
+    def log_and_raise_git_error(
+        message: str, operation: str, path: str = "."
+    ) -> NoReturn:
         """Log and raise a git operation error."""
-        details = {
+        details: dict[str, object] = {
             "operation": operation,
-            "path": path
+            "path": path,
         }
         error = GitOperationError(message, details)
         logger.error(f"Git operation error: {message}")
@@ -316,12 +362,14 @@ class ErrorReporter:
         raise error
 
     @staticmethod
-    def log_and_raise_security_error(message: str, security_check: str, value: str) -> None:
+    def log_and_raise_security_error(
+        message: str, security_check: str, value: str
+    ) -> NoReturn:
         """Log and raise a security error."""
-        details = {
+        details: dict[str, object] = {
             "security_check": security_check,
             "value": value,
-            "value_length": len(value) if isinstance(value, str) else None
+            "value_length": len(value),
         }
         error = SecurityError(message, details)
         logger.error(f"Security error: {message}")
