@@ -15,7 +15,7 @@ from typing import TypedDict
 from .app_context import GitHubActionsConfig
 from .exceptions import handle_github_actions_errors
 from .git_operations import GitOperations
-from .incrementer import VersionIncrementer
+from .incrementer import IncrementType, VersionIncrementer
 from .io_operations import IOOperations
 from .logging_config import LoggingConfig, SemanticLogger
 from .modes import ModeValidator, OperationMode
@@ -29,7 +29,7 @@ class IncrementResult(TypedDict):
 
     original_version: SemanticVersion
     incremented_version: SemanticVersion
-    increment_type: object
+    increment_type: IncrementType
     existing_tags: set[str]
 
 

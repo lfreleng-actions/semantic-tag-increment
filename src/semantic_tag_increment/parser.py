@@ -70,6 +70,12 @@ class SemanticVersion:
         Raises:
             ValueError: If the version string is not a valid semantic version
         """
+        if not isinstance(version_string, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+            raise ValueError(  # pyright: ignore[reportUnreachable]
+                "Version string must be a string,"
+                + f" got {type(version_string).__name__}"
+            )
+
         if not version_string:
             raise ValueError("Version string cannot be empty or None")
 
@@ -128,6 +134,9 @@ class SemanticVersion:
         """
         try:
             # Basic safety checks before attempting parse
+            if not isinstance(version_string, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+                return False  # type: ignore[unreachable]  # pyright: ignore[reportUnreachable]
+
             if not version_string:
                 return False
 

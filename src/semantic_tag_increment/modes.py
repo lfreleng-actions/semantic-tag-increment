@@ -89,6 +89,12 @@ class ModeHelper:
         Raises:
             ValidationError: If the mode string is not 'string'
         """
+        if not isinstance(mode_str, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+            ErrorReporter.log_and_raise_validation_error(  # pyright: ignore[reportUnreachable]
+                "Mode must be a string,"
+                + f" got {type(mode_str).__name__}"
+            )
+
         if not mode_str:
             ErrorReporter.log_and_raise_validation_error(
                 "Mode must be a non-empty string"
