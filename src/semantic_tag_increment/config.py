@@ -10,9 +10,10 @@ Since the tool now only supports string mode, most configuration functionality h
 
 import logging
 import os
-import yaml
 from pathlib import Path
-from typing import Dict, Optional, Any
+from typing import ClassVar
+
+import yaml
 
 from .exceptions import ConfigurationError
 
@@ -28,18 +29,20 @@ class ConfigurationManager:
     """
 
     # Configuration directory and file names
-    CONFIG_DIR_NAME = "semantic_tag_increment"
-    USER_CONFIG_FILE = "config.yaml"
+    CONFIG_DIR_NAME: ClassVar[str] = "semantic_tag_increment"
+    USER_CONFIG_FILE: ClassVar[str] = "config.yaml"
 
-    def __init__(self, config_dir: Optional[str] = None):
+    def __init__(self, config_dir: str | None = None):
         """
         Initialize the configuration manager.
 
         Args:
             config_dir: Optional custom configuration directory path
         """
-        self.config_dir = Path(config_dir) if config_dir else self._get_default_config_dir()
-        self.user_config_file = self.config_dir / self.USER_CONFIG_FILE
+        self.config_dir: Path = (
+            Path(config_dir) if config_dir else self._get_default_config_dir()
+        )
+        self.user_config_file: Path = self.config_dir / self.USER_CONFIG_FILE
 
         # Ensure configuration directory exists
         self._ensure_config_dir()
@@ -59,9 +62,9 @@ class ConfigurationManager:
             self.config_dir.mkdir(parents=True, exist_ok=True)
             logger.debug(f"Configuration directory: {self.config_dir}")
         except OSError as e:
-            raise ConfigurationError(f"Failed to create configuration directory: {e}")
+            raise ConfigurationError(f"Failed to create configuration directory: {e}") from e
 
-    def load_general_config(self) -> Dict[str, Any]:
+    def load_general_config(self) -> dict[str, object]:
         """
         Load general configuration settings.
 
@@ -73,12 +76,19 @@ class ConfigurationManager:
 
         try:
             with open(self.user_config_file, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f) or {}
+                loaded: object = yaml.safe_load(f)  # pyright: ignore[reportAny]
+                if isinstance(loaded, dict):
+                    typed_loaded: dict[object, object] = {
+                        k: v
+                        for k, v in loaded.items()  # pyright: ignore[reportUnknownVariableType]
+                    }
+                    return {str(k): v for k, v in typed_loaded.items()}
+                return {}
         except Exception as e:
             logger.warning(f"Failed to load general configuration: {e}")
             return {}
 
-    def save_general_config(self, config: Dict[str, Any]) -> None:
+    def save_general_config(self, config: dict[str, object]) -> None:
         """
         Save general configuration settings.
 
@@ -94,14 +104,14 @@ class ConfigurationManager:
         except Exception as e:
             logger.warning(f"Failed to save general configuration: {e}")
 
-    def get_config_info(self) -> Dict[str, Any]:
+    def get_config_info(self) -> dict[str, object]:
         """
         Get information about the current configuration.
 
         Returns:
             Dictionary with configuration information
         """
-        info = {
+        info: dict[str, object] = {
             'config_dir': str(self.config_dir),
             'config_dir_exists': self.config_dir.exists(),
             'user_config_file': str(self.user_config_file),
@@ -117,7 +127,7 @@ class ConfigurationManager:
         Returns:
             List of validation issues (empty if no issues)
         """
-        issues = []
+        issues: list[str] = []
 
         # Check if configuration directory is writable
         if not os.access(self.config_dir, os.W_OK):
@@ -125,7 +135,7 @@ class ConfigurationManager:
 
         # Validate general configuration file
         try:
-            self.load_general_config()
+            _ = self.load_general_config()
         except Exception as e:
             issues.append(f"Failed to validate general configuration: {e}")
 
@@ -133,7 +143,7 @@ class ConfigurationManager:
 
 
 # Global configuration manager instance
-_config_manager: Optional[ConfigurationManager] = None
+_config_manager: ConfigurationManager | None = None
 
 
 def get_config_manager() -> ConfigurationManager:
@@ -144,7 +154,7 @@ def get_config_manager() -> ConfigurationManager:
     return _config_manager
 
 
-def initialize_config(config_dir: Optional[str] = None) -> ConfigurationManager:
+def initialize_config(config_dir: str | None = None) -> ConfigurationManager:
     """
     Initialize the configuration system.
 

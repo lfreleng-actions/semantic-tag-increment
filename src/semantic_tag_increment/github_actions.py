@@ -10,18 +10,27 @@ for string-mode tag incrementing only.
 
 import logging
 import time
-from typing import Any
+from typing import TypedDict
 
 from .app_context import GitHubActionsConfig
 from .exceptions import handle_github_actions_errors
 from .git_operations import GitOperations
-from .incrementer import VersionIncrementer
+from .incrementer import IncrementType, VersionIncrementer
 from .io_operations import IOOperations
 from .logging_config import LoggingConfig, SemanticLogger
-from .modes import OperationMode, ModeValidator
+from .modes import ModeValidator, OperationMode
 from .parser import SemanticVersion
 
 logger = logging.getLogger(__name__)
+
+
+class IncrementResult(TypedDict):
+    """Structured result returned by ``_execute_increment``."""
+
+    original_version: SemanticVersion
+    incremented_version: SemanticVersion
+    increment_type: IncrementType
+    existing_tags: set[str]
 
 
 class GitHubActionsRunner:
@@ -34,7 +43,7 @@ class GitHubActionsRunner:
         Args:
             debug_mode: Enable debug mode
         """
-        self.debug_mode = debug_mode
+        self.debug_mode: bool = debug_mode
         self._setup_logging()
 
     def _setup_logging(self) -> None:
@@ -123,7 +132,9 @@ class GitHubActionsRunner:
         print("::endgroup::")
         print()
 
-    def _execute_increment(self, config: dict[str, str | None]) -> dict[str, Any]:
+    def _execute_increment(
+        self, config: dict[str, str | None]
+    ) -> IncrementResult:
         """
         Execute the version increment operation.
 
@@ -218,7 +229,7 @@ class GitHubActionsRunner:
 
     def _output_results(
         self,
-        result: dict[str, Any]
+        result: IncrementResult,
     ) -> None:
         """Output results to GitHub Actions."""
         print("::group::Results")

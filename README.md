@@ -17,7 +17,7 @@ semantic versioning rules.
 increment type
 - **Semantic versioning compliant**: Follows [SemVer](https://semver.org/)
 specification
-- **Complex pre-release support**: Handles multiple pre-release identifiers
+- **Complex pre-release support**: Handles compound pre-release identifiers
 - **GitHub Actions integration**: Easy to use in CI/CD workflows
 - **Conflict detection**: Optional checking against existing Git tags
 - **Flexible output formats**: Full version with prefix or numeric output
@@ -121,23 +121,23 @@ Use the `--validate` flag to check if a tag is a valid
 semantic version without incrementing:
 
 ```bash
-# Validate basic version
+# Check basic version
 semantic-tag-increment --tag "v1.2.3" --validate
 
-# Validate complex version with prerelease and metadata
+# Check complex version with prerelease and metadata
 semantic-tag-increment --tag "v1.2.3-alpha.1+build.123" --validate
 ```
 
 #### Version Validation
 
 ```bash
-# Validate a semantic version
+# Check a semantic version
 semantic-tag-increment --tag "v1.2.3-alpha.1" --validate
 ```
 
 #### Get Version Suggestions
 
-Use the `--suggest` flag to see multiple possible next versions:
+Use the `--suggest` flag to list candidate next versions:
 
 ```bash
 # Get suggestions for prerelease versions (default when using --suggest)
@@ -158,8 +158,8 @@ semantic-tag-increment --tag "v1.2.3" --increment "patch" --suggest
 - `--prerelease-type, -p`: Custom prerelease identifier (alpha, beta, rc, etc.)
 - `--preserve-metadata/--no-preserve-metadata`: Preserve or strip build metadata
   during increments (default: strip)
-- `--validate`: Validate the semantic version tag format without incrementing
-- `--suggest`: Show multiple possible next versions for the given increment type
+- `--validate`: Check the semantic version tag format without incrementing
+- `--suggest`: List candidate next versions for the given increment type
 - `--check-conflicts/--no-check-conflicts`: Enable/disable Git tag conflict
   checking
 - `--output-format, -f`: Output format: full, numeric, both (default: full)

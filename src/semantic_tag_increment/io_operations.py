@@ -9,8 +9,6 @@ This module handles file I/O operations and output formatting for different cont
 
 import logging
 import os
-from typing import Optional
-
 logger = logging.getLogger(__name__)
 
 
@@ -30,7 +28,7 @@ class IOOperations:
         if github_output:
             try:
                 with open(github_output, "a", encoding="utf-8") as f:
-                    f.write(f"{key}={value}\n")
+                    _ = f.write(f"{key}={value}\n")
                 logger.debug(f"Wrote GitHub output: {key}={value}")
             except OSError as e:
                 logger.error(f"Failed to write GitHub output: {e}")
@@ -50,7 +48,7 @@ class IOOperations:
         IOOperations.write_github_output("numeric_tag", numeric_version)
 
     @staticmethod
-    def get_env_var(name: str, default: Optional[str] = None) -> Optional[str]:
+    def get_env_var(name: str, default: str | None = None) -> str | None:
         """
         Get environment variable with optional default.
 

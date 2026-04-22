@@ -10,7 +10,7 @@ The tool now only supports string mode for direct tag incrementing.
 
 import logging
 from enum import Enum
-from typing import Optional, NoReturn
+from typing import NoReturn
 
 from .exceptions import ErrorReporter
 
@@ -29,9 +29,9 @@ class ModeValidator:
     @staticmethod
     def validate_mode_inputs(
         mode: OperationMode,
-        tag: Optional[str] = None,
-        path: Optional[str] = None,
-        check_tags: bool = True
+        tag: str | None = None,
+        path: str | None = None,
+        check_tags: bool = True,  # noqa: ARG004
     ) -> None:
         """
         Validate inputs for string mode.
@@ -45,8 +45,12 @@ class ModeValidator:
         Raises:
             ValidationError: If the inputs are invalid
         """
+        # ``check_tags`` is accepted for API compatibility but is not
+        # consulted here; it is honoured downstream by ``ModeHelper``.
+        _ = check_tags
+
         if mode != OperationMode.STRING:
-            ModeValidator._raise_unsupported_mode_error(mode)
+            ModeValidator._raise_unsupported_mode_error(mode)  # pyright: ignore[reportUnreachable]
 
         if not tag or not tag.strip():
             ErrorReporter.log_and_raise_validation_error(
@@ -63,7 +67,8 @@ class ModeValidator:
     def _raise_unsupported_mode_error(mode: OperationMode) -> NoReturn:
         """Raise an error for unsupported operation mode."""
         ErrorReporter.log_and_raise_validation_error(
-            f"Unsupported operation mode: {mode.value}. Only 'string' mode is supported."
+            f"Unsupported operation mode: {mode.value}."
+            + " Only 'string' mode is supported."
         )
 
 
@@ -84,15 +89,21 @@ class ModeHelper:
         Raises:
             ValidationError: If the mode string is not 'string'
         """
-        if not mode_str or not isinstance(mode_str, str):
+        if not isinstance(mode_str, str):  # pyright: ignore[reportUnnecessaryIsInstance]
+            ErrorReporter.log_and_raise_validation_error(  # pyright: ignore[reportUnreachable]
+                "Mode must be a string,"
+                + f" got {type(mode_str).__name__}"
+            )
+
+        if not mode_str:
             ErrorReporter.log_and_raise_validation_error(
                 "Mode must be a non-empty string"
             )
 
-        mode_str = mode_str.strip().lower()
+        normalised = mode_str.strip().lower()
 
-        if mode_str != "string":
-            ModeHelper._raise_invalid_mode_error(mode_str)
+        if normalised != "string":
+            ModeHelper._raise_invalid_mode_error(normalised)
 
         return OperationMode.STRING
 
@@ -107,17 +118,23 @@ class ModeHelper:
         Returns:
             Description string
         """
-        if mode == OperationMode.STRING:
+        # ``OperationMode`` only has a single member today, but the
+        # explicit branch keeps the API ready for future modes without
+        # tripping basedpyright's exhaustiveness checks.
+        if mode is OperationMode.STRING:
             return (
-                "String mode: Standalone tag incrementing based purely on input string. "
-                "No project context or file extraction is performed."
+                "String mode: Standalone tag incrementing based purely"
+                + " on input string. No project context or file extraction"
+                + " is performed."
             )
 
-        # This should never happen with current enum values, but keeping for future extensibility
-        raise ValueError(f"Unknown mode: {mode.value}")
+        # Defensive fallback for future enum members.
+        raise ValueError(f"Unknown mode: {mode.value}")  # pyright: ignore[reportUnreachable]
 
     @staticmethod
-    def should_check_git_tags(mode: OperationMode, check_tags: bool) -> bool:
+    def should_check_git_tags(
+        mode: OperationMode, check_tags: bool
+    ) -> bool:
         """
         Determine if Git tag checking should be performed.
 
@@ -128,14 +145,15 @@ class ModeHelper:
         Returns:
             True if Git tag checking should be performed
         """
-        if mode == OperationMode.STRING:
+        if mode is OperationMode.STRING:
             return check_tags
 
-        # This should never be reached with valid enum values
-        raise AssertionError(f"Unhandled mode: {mode}")
+        raise AssertionError(f"Unhandled mode: {mode}")  # pyright: ignore[reportUnreachable]
 
     @staticmethod
-    def get_effective_path(mode: OperationMode, path: Optional[str]) -> str:
+    def get_effective_path(
+        mode: OperationMode, path: str | None
+    ) -> str:
         """
         Get the effective path to use for Git operations.
 
@@ -146,15 +164,19 @@ class ModeHelper:
         Returns:
             The effective path to use (current directory for string mode)
         """
-        if mode == OperationMode.STRING:
-            # Use provided path or default to current directory for Git operations
+        if mode is OperationMode.STRING:
+            # Use provided path or default to current directory for Git
+            # operations.
             return path.strip() if path and path.strip() else "."
 
-        # This should never be reached with valid enum values
-        raise AssertionError(f"Unhandled mode: {mode}")
+        raise AssertionError(f"Unhandled mode: {mode}")  # pyright: ignore[reportUnreachable]
 
     @staticmethod
-    def log_mode_operation(mode: OperationMode, tag: Optional[str], path: Optional[str]) -> None:
+    def log_mode_operation(
+        mode: OperationMode,
+        tag: str | None,
+        path: str | None,
+    ) -> None:
         """
         Log information about the selected mode and operation.
 
@@ -163,14 +185,16 @@ class ModeHelper:
             tag: The input tag (required for string mode)
             path: The input path (used for Git operations)
         """
-        if mode == OperationMode.STRING:
-            logger.info(f"Operation mode: {mode.value}")
-            logger.debug(f"Mode description: {ModeHelper.get_mode_description(mode)}")
-            logger.info(f"Using explicit tag: {tag}")
-            if path and path.strip() and path.strip() != ".":
-                logger.info(f"Git operations path: {path}")
-        else:
-            raise AssertionError(f"Unhandled mode: {mode}")
+        if mode is not OperationMode.STRING:
+            raise AssertionError(f"Unhandled mode: {mode}")  # pyright: ignore[reportUnreachable]
+
+        logger.info(f"Operation mode: {mode.value}")
+        logger.debug(
+            f"Mode description: {ModeHelper.get_mode_description(mode)}"
+        )
+        logger.info(f"Using explicit tag: {tag}")
+        if path and path.strip() and path.strip() != ".":
+            logger.info(f"Git operations path: {path}")
 
     @staticmethod
     def _raise_invalid_mode_error(mode_str: str) -> NoReturn:

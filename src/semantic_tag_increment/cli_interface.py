@@ -11,7 +11,7 @@ focused solely on semantic tag incrementing without project detection.
 import logging
 import os
 import re
-from typing import Annotated, Optional
+from typing import Annotated
 
 import typer
 
@@ -40,13 +40,13 @@ def main_callback(
         typer.Option("--debug", help="Enable debug logging output to terminal"),
     ] = False,
     tag: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--tag", "-t", help="The existing semantic tag to be incremented"
         ),
     ] = None,
     increment: Annotated[
-        Optional[str],
+        str | None,
         typer.Option(
             "--increment",
             "-i",
@@ -164,7 +164,7 @@ def main_callback(
     # If no tag is provided and not validating or suggesting, show help
     if tag is None:
         typer.echo(ctx.get_help())
-        ctx.exit()
+        raise typer.Exit()
 
     # For increment mode, increment parameter is required
     if increment is None:
@@ -248,7 +248,7 @@ def suggest_versions_inline(tag: str, increment: str, path: str = ".", fetch_tim
 def increment_version(
     tag: str,
     increment: str = "dev",
-    prerelease_type: Optional[str] = None,
+    prerelease_type: str | None = None,
     check_conflicts: bool = True,
     output_format: str = "full",
     suppress_cli_logging: bool = False,
@@ -285,7 +285,7 @@ def _validate_increment_inputs(
     tag: str,
     increment: str,
     output_format: str,
-    prerelease_type: Optional[str],
+    prerelease_type: str | None,
     path: str,
     check_conflicts: bool
 ) -> None:
@@ -335,7 +335,7 @@ def _process_version_increment(
     mode: OperationMode,
     tag: str,
     increment: str,
-    prerelease_type: Optional[str],
+    prerelease_type: str | None,
     check_conflicts: bool,
     path: str,
     preserve_metadata: bool,
