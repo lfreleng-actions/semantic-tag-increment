@@ -113,7 +113,7 @@ markers = [
 ]
 
 [tool.coverage.run]
-source = ["src/semantic_tag_increment"]
+source = ["semantic_tag_increment"]
 omit = [
     "*/tests/*",
     "*/test_*",
