@@ -52,12 +52,14 @@ runs:
   steps:
     - name: 'Setup action/environment'
       shell: bash
+      env:
+        INPUT_PATH: "${{ inputs.path }}"
       run: |
         # Setup action/environment
 
         # Verify path is a valid directory
-        if [ ! -d "${{ inputs.path }}" ]; then
-          echo 'Error: invalid path/directory ${{ inputs.path }} ❌'
+        if [ ! -d "$INPUT_PATH" ]; then
+          echo "Error: invalid path/directory $INPUT_PATH ❌"
           exit 1
         fi
 
