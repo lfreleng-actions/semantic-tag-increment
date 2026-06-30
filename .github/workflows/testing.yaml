@@ -39,7 +39,7 @@ jobs:
 
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: "Basic increment: patch"
         id: basic-patch
@@ -139,7 +139,7 @@ jobs:
 
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: "Prerelease with type: alpha"
         id: prerelease-alpha
@@ -236,7 +236,7 @@ jobs:
 
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: "No prefix tag"
         id: no-prefix
@@ -351,7 +351,7 @@ jobs:
 
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: "Invalid tag format"
         id: invalid-tag
@@ -417,7 +417,7 @@ jobs:
 
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: "Test with V prefix"
         id: v-prefix
@@ -482,7 +482,7 @@ jobs:
 
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
-        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       # Test with conflict checking disabled for speed
       - name: "Fast execution without git checks"
