@@ -40,6 +40,8 @@ jobs:
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: "Basic increment: patch"
         id: basic-patch
@@ -140,6 +142,8 @@ jobs:
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: "Prerelease with type: alpha"
         id: prerelease-alpha
@@ -237,6 +241,8 @@ jobs:
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: "No prefix tag"
         id: no-prefix
@@ -352,6 +358,8 @@ jobs:
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: "Invalid tag format"
         id: invalid-tag
@@ -418,6 +426,8 @@ jobs:
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: "Test with V prefix"
         id: v-prefix
@@ -483,6 +493,8 @@ jobs:
       - name: 'Checkout repository'
         # yamllint disable rule:line-length
         uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       # Test with conflict checking disabled for speed
       - name: "Fast execution without git checks"
@@ -553,26 +565,41 @@ jobs:
     steps:
       - name: 'Print test summary'
         shell: bash
+        env:
+          BASIC_RESULT: "${{ needs.basic-tests.result }}"
+          PRERELEASE_RESULT: "${{ needs.prerelease-tests.result }}"
+          EDGE_CASE_RESULT: "${{ needs.edge-case-tests.result }}"
+          ERROR_HANDLING_RESULT: "${{ needs.error-handling-tests.result }}"
+          OUTPUT_RESULT: "${{ needs.output-tests.result }}"
+          PERFORMANCE_RESULT: "${{ needs.performance-tests.result }}"
         run: |
+          status() {
+            if [ "$1" = "success" ]; then
+              echo "✅ Passed"
+            else
+              echo "❌ Failed"
+            fi
+          }
+
           echo "## 🧪 Test Summary"
           echo ""
           echo "| Test Suite | Result |"
           echo "|------------|--------|"
-          echo "| Basic Tests | ${{ needs.basic-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
-          echo "| Prerelease Tests | ${{ needs.prerelease-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
-          echo "| Edge Case Tests | ${{ needs.edge-case-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
-          echo "| Error Handling Tests | ${{ needs.error-handling-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
-          echo "| Output Tests | ${{ needs.output-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
-          echo "| Performance Tests | ${{ needs.performance-tests.result == 'success' && '✅ Passed' || '❌ Failed' }} |"
+          echo "| Basic Tests | $(status "$BASIC_RESULT") |"
+          echo "| Prerelease Tests | $(status "$PRERELEASE_RESULT") |"
+          echo "| Edge Case Tests | $(status "$EDGE_CASE_RESULT") |"
+          echo "| Error Handling Tests | $(status "$ERROR_HANDLING_RESULT") |"
+          echo "| Output Tests | $(status "$OUTPUT_RESULT") |"
+          echo "| Performance Tests | $(status "$PERFORMANCE_RESULT") |"
           echo ""
 
           # Exit with error if any test failed
-          if [ "${{ needs.basic-tests.result }}" != "success" ] || \
-             [ "${{ needs.prerelease-tests.result }}" != "success" ] || \
-             [ "${{ needs.edge-case-tests.result }}" != "success" ] || \
-             [ "${{ needs.error-handling-tests.result }}" != "success" ] || \
-             [ "${{ needs.output-tests.result }}" != "success" ] || \
-             [ "${{ needs.performance-tests.result }}" != "success" ]; then
+          if [ "$BASIC_RESULT" != "success" ] || \
+             [ "$PRERELEASE_RESULT" != "success" ] || \
+             [ "$EDGE_CASE_RESULT" != "success" ] || \
+             [ "$ERROR_HANDLING_RESULT" != "success" ] || \
+             [ "$OUTPUT_RESULT" != "success" ] || \
+             [ "$PERFORMANCE_RESULT" != "success" ]; then
             echo "❌ Some tests failed!"
             exit 1
           else
