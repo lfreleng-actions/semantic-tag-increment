@@ -8,11 +8,10 @@ This module provides the command-line interface using Typer for both standalone
 CLI usage and GitHub Actions integration.
 """
 
-# Import the new main entry point
-from .main import main
-from .github_actions import GitHubActionsRunner
 from .app_context import ContextDetector
 from .cli_interface import app
+from .github_actions import GitHubActionsRunner
+from .main import main
 
 
 def run_github_action() -> None:

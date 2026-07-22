@@ -76,7 +76,9 @@ Pre-release handling:
 
     >>> # Increment existing pre-release
     >>> alpha_version = SemanticVersion.parse("v1.0.0-alpha.1")
-    >>> next_alpha = incrementer.increment(alpha_version, IncrementType.PRERELEASE)
+    >>> next_alpha = incrementer.increment(
+    ...     alpha_version, IncrementType.PRERELEASE
+    ... )
     >>> print(next_alpha)
     v1.0.0-alpha.2
 
@@ -133,20 +135,20 @@ __version__ = "1.0.0"
 
 from .cli import main
 from .cli_interface import app
-from .incrementer import VersionIncrementer
-from .parser import SemanticVersion
 from .exceptions import (
+    ConfigurationError,
+    ErrorReporter,
+    GitOperationError,
+    IncrementError,
+    ParseError,
+    SecurityError,
     SemanticVersionError,
     ValidationError,
-    ParseError,
-    IncrementError,
-    GitOperationError,
-    ConfigurationError,
-    SecurityError,
     handle_cli_errors,
     handle_github_actions_errors,
-    ErrorReporter,
 )
+from .incrementer import VersionIncrementer
+from .parser import SemanticVersion
 
 __all__ = [
     "SemanticVersion",

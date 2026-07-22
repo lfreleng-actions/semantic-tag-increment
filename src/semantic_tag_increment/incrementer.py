@@ -100,7 +100,6 @@ class VersionIncrementer:
             prefix=version.prefix,
         )
 
-        # Check for conflicts with existing tags
         if self._version_exists(candidate):
             # If a conflict exists, try incrementing the patch version
             for patch in range(1, self.MAX_PATCH_ATTEMPTS):
@@ -109,7 +108,9 @@ class VersionIncrementer:
                     minor=candidate.minor,
                     patch=patch,
                     prerelease=None,
-                    metadata=version.metadata if self.preserve_metadata else None,
+                    metadata=version.metadata
+                    if self.preserve_metadata
+                    else None,
                     prefix=version.prefix,
                 )
                 if not self._version_exists(next_candidate):
@@ -133,7 +134,6 @@ class VersionIncrementer:
             prefix=version.prefix,
         )
 
-        # Check for conflicts with existing tags
         if self._version_exists(candidate):
             # If a conflict exists, try incrementing the patch version
             for patch in range(1, self.MAX_PATCH_ATTEMPTS):
@@ -142,7 +142,9 @@ class VersionIncrementer:
                     minor=candidate.minor,
                     patch=patch,
                     prerelease=None,
-                    metadata=version.metadata if self.preserve_metadata else None,
+                    metadata=version.metadata
+                    if self.preserve_metadata
+                    else None,
                     prefix=version.prefix,
                 )
                 if not self._version_exists(next_candidate):
@@ -166,7 +168,9 @@ class VersionIncrementer:
 
         return self._resolve_patch_conflict(version, prerelease_type)
 
-    def _create_patch_candidate(self, version: SemanticVersion) -> SemanticVersion:
+    def _create_patch_candidate(
+        self, version: SemanticVersion
+    ) -> SemanticVersion:
         """Create a candidate patch version."""
         return SemanticVersion(
             major=version.major,
@@ -193,8 +197,9 @@ class VersionIncrementer:
         self, version: SemanticVersion
     ) -> SemanticVersion | None:
         """Find the next available patch version using optimized search."""
-        # Get existing patch versions for this major.minor
-        existing_patches = self._get_existing_patches(version.major, version.minor)
+        existing_patches = self._get_existing_patches(
+            version.major, version.minor
+        )
 
         # Find first gap in sequence starting from patch + 1
         patch = version.patch + 1
@@ -207,7 +212,9 @@ class VersionIncrementer:
                     minor=version.minor,
                     patch=patch,
                     prerelease=None,
-                    metadata=version.metadata if self.preserve_metadata else None,
+                    metadata=version.metadata
+                    if self.preserve_metadata
+                    else None,
                     prefix=version.prefix,
                 )
                 # Double-check with full version string matching
@@ -312,7 +319,9 @@ class VersionIncrementer:
                     minor=version.minor,
                     patch=version.patch,
                     prerelease=f"{prerelease_type}.1",
-                    metadata=version.metadata if self.preserve_metadata else None,
+                    metadata=version.metadata
+                    if self.preserve_metadata
+                    else None,
                     prefix=version.prefix,
                 )
         # Existing prerelease - increment it
@@ -345,7 +354,9 @@ class VersionIncrementer:
                 prerelease_type=prerelease_id,
                 metadata=version.metadata,
                 prefix=version.prefix,
-                max_attempts=min(self.MAX_PRERELEASE_ATTEMPTS, self.MAX_PATCH_ATTEMPTS),
+                max_attempts=min(
+                    self.MAX_PRERELEASE_ATTEMPTS, self.MAX_PATCH_ATTEMPTS
+                ),
             )
             if available_version:
                 return available_version
@@ -468,7 +479,9 @@ class VersionIncrementer:
                 minor=base_version.minor,
                 patch=base_version.patch,
                 prerelease=new_prerelease,
-                metadata=base_version.metadata if self.preserve_metadata else None,
+                metadata=base_version.metadata
+                if self.preserve_metadata
+                else None,
                 prefix=base_version.prefix,
             )
 
@@ -514,7 +527,8 @@ class VersionIncrementer:
         # Build normalized tags cache if not already built
         if self._normalized_tags_cache is None:
             self._normalized_tags_cache = {
-                self._normalize_version_string(tag) for tag in self.existing_tags
+                self._normalize_version_string(tag)
+                for tag in self.existing_tags
             }
 
         # Check against cached normalized tags for better performance
@@ -535,10 +549,14 @@ class VersionIncrementer:
             return ""
 
         # Remove leading 'v' or 'V' prefix efficiently
-        start_idx = 1 if version_str and (version_str[0] == 'v' or version_str[0] == 'V') else 0
+        start_idx = (
+            1
+            if version_str and (version_str[0] == "v" or version_str[0] == "V")
+            else 0
+        )
 
         # Find build metadata separator if present
-        plus_idx = version_str.find('+', start_idx)
+        plus_idx = version_str.find("+", start_idx)
 
         # Extract the normalized version without metadata
         if plus_idx != -1:
@@ -716,8 +734,8 @@ class VersionIncrementer:
             if normalized.startswith(prefix_pattern):
                 try:
                     # Extract patch number (before any prerelease or metadata)
-                    remainder = normalized[len(prefix_pattern):]
-                    patch_str = remainder.split('-')[0].split('+')[0]
+                    remainder = normalized[len(prefix_pattern) :]
+                    patch_str = remainder.split("-")[0].split("+")[0]
                     if patch_str.isdigit():
                         patches.add(int(patch_str))
                 except (ValueError, IndexError):
@@ -742,9 +760,9 @@ class VersionIncrementer:
             if normalized.startswith(version_prefix):
                 try:
                     # Extract the number after the prerelease type
-                    remainder = normalized[len(version_prefix):]
+                    remainder = normalized[len(version_prefix) :]
                     # Get everything before any additional dots, plus, or end of string
-                    num_str = remainder.split('.')[0].split('+')[0]
+                    num_str = remainder.split(".")[0].split("+")[0]
                     if num_str.isdigit():
                         numbers.add(int(num_str))
                 except (ValueError, IndexError):

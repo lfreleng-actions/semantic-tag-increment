@@ -11,16 +11,17 @@ focused solely on semantic tag incrementing without project detection.
 import logging
 import os
 import re
+from dataclasses import dataclass
 from typing import Annotated
 
 import typer
 
-from .exceptions import handle_cli_errors, ErrorReporter
+from .exceptions import ErrorReporter, handle_cli_errors
 from .git_operations import GitOperations
 from .incrementer import VersionIncrementer
 from .io_operations import IOOperations
 from .logging_config import LoggingConfig
-from .modes import OperationMode, ModeValidator, ModeHelper
+from .modes import ModeHelper, ModeValidator, OperationMode
 from .parser import SemanticVersion
 
 logger = logging.getLogger(__name__)
@@ -148,14 +149,18 @@ def main_callback(
     # Handle validation-only mode
     if validate_only:
         if tag is None:
-            ErrorReporter.log_and_raise_validation_error("Tag parameter is required for validation")
+            ErrorReporter.log_and_raise_validation_error(
+                "Tag parameter is required for validation"
+            )
         validate_version_inline(tag)
         return
 
     # Handle suggest mode
     if suggest:
         if tag is None:
-            ErrorReporter.log_and_raise_validation_error("Tag parameter is required for suggestions")
+            ErrorReporter.log_and_raise_validation_error(
+                "Tag parameter is required for suggestions"
+            )
         if increment is None:
             increment = "prerelease"  # Default for suggestions
         suggest_versions_inline(tag, increment, path, fetch_timeout)
@@ -170,7 +175,6 @@ def main_callback(
     if increment is None:
         increment = "dev"  # Default value
 
-    # Run increment logic
     increment_version(
         tag=tag,
         increment=increment,
@@ -217,7 +221,9 @@ def validate_version_inline(tag: str) -> None:
     logger.info("Version validation completed successfully")
 
 
-def suggest_versions_inline(tag: str, increment: str, path: str = ".", fetch_timeout: int = 120) -> None:
+def suggest_versions_inline(
+    tag: str, increment: str, path: str = ".", fetch_timeout: int = 120
+) -> None:
     """
     Suggest multiple possible next versions and display results.
 
@@ -245,6 +251,21 @@ def suggest_versions_inline(tag: str, increment: str, path: str = ".", fetch_tim
     logger.info(f"Generated {len(suggestions)} suggestions")
 
 
+@dataclass(frozen=True)
+class IncrementRequest:
+    """Bundle of parameters describing a single increment operation."""
+
+    mode: OperationMode
+    tag: str
+    increment: str
+    prerelease_type: str | None
+    check_conflicts: bool
+    output_format: str
+    path: str
+    preserve_metadata: bool
+    fetch_timeout: int
+
+
 def increment_version(
     tag: str,
     increment: str = "dev",
@@ -262,122 +283,126 @@ def increment_version(
     This function takes an explicit semantic version tag and increments it
     according to the specified increment type.
     """
-    # Force string mode (only supported mode)
-    operation_mode = OperationMode.STRING
+    request = IncrementRequest(
+        mode=OperationMode.STRING,  # Force string mode (only supported mode)
+        tag=tag,
+        increment=increment,
+        prerelease_type=prerelease_type,
+        check_conflicts=check_conflicts,
+        output_format=output_format,
+        path=path,
+        preserve_metadata=preserve_metadata,
+        fetch_timeout=fetch_timeout,
+    )
 
-    # Validate all inputs
-    _validate_increment_inputs(operation_mode, tag, increment, output_format, prerelease_type, path, check_conflicts)
-
-    # Configure logging if needed
+    _validate_increment_inputs(request)
     _configure_increment_logging(suppress_cli_logging)
-
-    # Process the version increment
-    result = _process_version_increment(operation_mode, tag, increment, prerelease_type, check_conflicts, path, preserve_metadata, fetch_timeout)
-
-    # Output results in specified format
-    _output_increment_results(result, output_format)
+    result = _process_version_increment(request)
+    _output_increment_results(result, request.output_format)
 
     logger.info("Version increment completed successfully")
 
 
-def _validate_increment_inputs(
-    mode: OperationMode,
-    tag: str,
-    increment: str,
-    output_format: str,
-    prerelease_type: str | None,
-    path: str,
-    check_conflicts: bool
-) -> None:
+def _validate_increment_inputs(request: IncrementRequest) -> None:
     """Validate all inputs for the increment command."""
-    # Validate mode-specific inputs
-    ModeValidator.validate_mode_inputs(mode, tag, path, check_conflicts)
+    ModeValidator.validate_mode_inputs(
+        request.mode, request.tag, request.path, request.check_conflicts
+    )
 
     # Basic input validation
-    if not increment or not increment.strip():
-        ErrorReporter.log_and_raise_validation_error("Increment type cannot be empty")
-
-    # Validate output format
-    valid_formats = ["full", "numeric", "both"]
-    if output_format not in valid_formats:
+    if not request.increment or not request.increment.strip():
         ErrorReporter.log_and_raise_validation_error(
-            f"Invalid output format: {output_format}. Valid formats: {', '.join(valid_formats)}"
+            "Increment type cannot be empty"
+        )
+
+    valid_formats = ["full", "numeric", "both"]
+    if request.output_format not in valid_formats:
+        ErrorReporter.log_and_raise_validation_error(
+            f"Invalid output format: {request.output_format}. Valid formats: {', '.join(valid_formats)}"
         )
 
     # Validate prerelease type if provided
-    if prerelease_type is not None and not prerelease_type.strip():
-        ErrorReporter.log_and_raise_validation_error("Prerelease type cannot be empty if provided")
-
     if (
-        prerelease_type
-        and not re.fullmatch(r"[a-zA-Z0-9.-]+", prerelease_type)
+        request.prerelease_type is not None
+        and not request.prerelease_type.strip()
+    ):
+        ErrorReporter.log_and_raise_validation_error(
+            "Prerelease type cannot be empty if provided"
+        )
+
+    if request.prerelease_type and not re.fullmatch(
+        r"[a-zA-Z0-9.-]+", request.prerelease_type
     ):
         ErrorReporter.log_and_raise_validation_error(
             "Prerelease type must contain only alphanumeric characters, hyphens, and dots"
         )
 
-    # Validate path exists and is a directory
-    effective_path = ModeHelper.get_effective_path(mode, path)
+    effective_path = ModeHelper.get_effective_path(request.mode, request.path)
     if not os.path.exists(effective_path):
-        ErrorReporter.log_and_raise_validation_error(f"Path directory does not exist: {effective_path}")
+        ErrorReporter.log_and_raise_validation_error(
+            f"Path directory does not exist: {effective_path}"
+        )
 
     if not os.path.isdir(effective_path):
-        ErrorReporter.log_and_raise_validation_error(f"Path is not a directory: {effective_path}")
+        ErrorReporter.log_and_raise_validation_error(
+            f"Path is not a directory: {effective_path}"
+        )
 
 
 def _configure_increment_logging(suppress_cli_logging: bool) -> None:
     """Configure logging for the increment operation."""
     if suppress_cli_logging and IOOperations.is_github_actions():
-        LoggingConfig.set_module_level("semantic_tag_increment", logging.WARNING)
+        LoggingConfig.set_module_level(
+            "semantic_tag_increment", logging.WARNING
+        )
 
 
 def _process_version_increment(
-    mode: OperationMode,
-    tag: str,
-    increment: str,
-    prerelease_type: str | None,
-    check_conflicts: bool,
-    path: str,
-    preserve_metadata: bool,
-    fetch_timeout: int = 120
+    request: IncrementRequest,
 ) -> dict[str, SemanticVersion]:
     """Process the version increment operation."""
-    # Log mode information
-    ModeHelper.log_mode_operation(mode, tag, path)
+    ModeHelper.log_mode_operation(request.mode, request.tag, request.path)
 
-    # Get effective path for Git operations
-    effective_path = ModeHelper.get_effective_path(mode, path)
+    effective_path = ModeHelper.get_effective_path(request.mode, request.path)
 
-    # Parse the input tag
-    original_version = SemanticVersion.parse(tag)
+    original_version = SemanticVersion.parse(request.tag)
     logger.info(f"Using version: {original_version} from input tag")
 
-    # Determine increment type
-    increment_type = VersionIncrementer.determine_increment_type(increment)
+    increment_type = VersionIncrementer.determine_increment_type(
+        request.increment
+    )
     logger.info(f"Increment type: {increment_type.value}")
 
     # Get existing tags if conflict checking is enabled
-    should_check_tags = ModeHelper.should_check_git_tags(mode, check_conflicts)
-    existing_tags: set[str] = GitOperations.get_existing_tags(effective_path, timeout=fetch_timeout) if should_check_tags else set()
+    should_check_tags = ModeHelper.should_check_git_tags(
+        request.mode, request.check_conflicts
+    )
+    existing_tags: set[str] = (
+        GitOperations.get_existing_tags(
+            effective_path, timeout=request.fetch_timeout
+        )
+        if should_check_tags
+        else set()
+    )
 
-    # Create incrementer and perform increment
-    incrementer = VersionIncrementer(existing_tags, preserve_metadata=preserve_metadata)
+    incrementer = VersionIncrementer(
+        existing_tags, preserve_metadata=request.preserve_metadata
+    )
     incremented_version = incrementer.increment(
-        original_version, increment_type, prerelease_type
+        original_version, increment_type, request.prerelease_type
     )
 
-    # Log operation details
-    _log_operation_details(
-        original_version, incremented_version, existing_tags
-    )
+    _log_operation_details(original_version, incremented_version, existing_tags)
 
     return {
         "original_version": original_version,
-        "incremented_version": incremented_version
+        "incremented_version": incremented_version,
     }
 
 
-def _output_increment_results(result: dict[str, SemanticVersion], output_format: str) -> None:
+def _output_increment_results(
+    result: dict[str, SemanticVersion], output_format: str
+) -> None:
     """Output results in the specified format."""
     incremented_version = result["incremented_version"]
 
@@ -397,12 +422,6 @@ def _output_increment_results(result: dict[str, SemanticVersion], output_format:
     # Write GitHub Actions outputs if in GitHub Actions context
     if IOOperations.is_github_actions():
         IOOperations.write_outputs_to_github(full_version, numeric_version)
-
-
-
-
-
-
 
 
 def _log_operation_details(

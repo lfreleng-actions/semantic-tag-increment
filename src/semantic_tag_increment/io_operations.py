@@ -9,6 +9,7 @@ This module handles file I/O operations and output formatting for different cont
 
 import logging
 import os
+
 logger = logging.getLogger(__name__)
 
 
@@ -36,7 +37,9 @@ class IOOperations:
             logger.debug("GITHUB_OUTPUT environment variable not set")
 
     @staticmethod
-    def write_outputs_to_github(full_version: str, numeric_version: str) -> None:
+    def write_outputs_to_github(
+        full_version: str, numeric_version: str
+    ) -> None:
         """
         Write both tag outputs to GitHub Actions.
 

@@ -49,10 +49,14 @@ class ConfigurationManager:
 
     def _get_default_config_dir(self) -> Path:
         """Get the default configuration directory path."""
-        if os.name == 'nt':  # Windows
-            config_base = Path(os.environ.get('APPDATA', Path.home() / 'AppData' / 'Roaming'))
+        if os.name == "nt":  # Windows
+            config_base = Path(
+                os.environ.get("APPDATA", Path.home() / "AppData" / "Roaming")
+            )
         else:  # Unix-like systems
-            config_base = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
+            config_base = Path(
+                os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
+            )
 
         return config_base / self.CONFIG_DIR_NAME
 
@@ -62,7 +66,9 @@ class ConfigurationManager:
             self.config_dir.mkdir(parents=True, exist_ok=True)
             logger.debug(f"Configuration directory: {self.config_dir}")
         except OSError as e:
-            raise ConfigurationError(f"Failed to create configuration directory: {e}") from e
+            raise ConfigurationError(
+                f"Failed to create configuration directory: {e}"
+            ) from e
 
     def load_general_config(self) -> dict[str, object]:
         """
@@ -75,13 +81,12 @@ class ConfigurationManager:
             return {}
 
         try:
-            with open(self.user_config_file, 'r', encoding='utf-8') as f:
+            with open(self.user_config_file, encoding="utf-8") as f:
                 loaded: object = yaml.safe_load(f)  # pyright: ignore[reportAny]
                 if isinstance(loaded, dict):
-                    typed_loaded: dict[object, object] = {
-                        k: v
-                        for k, v in loaded.items()  # pyright: ignore[reportUnknownVariableType]
-                    }
+                    typed_loaded: dict[object, object] = dict(
+                        loaded  # pyright: ignore[reportUnknownArgumentType]
+                    )
                     return {str(k): v for k, v in typed_loaded.items()}
                 return {}
         except Exception as e:
@@ -96,7 +101,7 @@ class ConfigurationManager:
             config: Dictionary of configuration settings to save
         """
         try:
-            with open(self.user_config_file, 'w', encoding='utf-8') as f:
+            with open(self.user_config_file, "w", encoding="utf-8") as f:
                 yaml.dump(config, f, default_flow_style=False, sort_keys=False)
 
             logger.debug("Saved general configuration")
@@ -112,10 +117,10 @@ class ConfigurationManager:
             Dictionary with configuration information
         """
         info: dict[str, object] = {
-            'config_dir': str(self.config_dir),
-            'config_dir_exists': self.config_dir.exists(),
-            'user_config_file': str(self.user_config_file),
-            'user_config_file_exists': self.user_config_file.exists(),
+            "config_dir": str(self.config_dir),
+            "config_dir_exists": self.config_dir.exists(),
+            "user_config_file": str(self.user_config_file),
+            "user_config_file_exists": self.user_config_file.exists(),
         }
 
         return info
@@ -131,7 +136,9 @@ class ConfigurationManager:
 
         # Check if configuration directory is writable
         if not os.access(self.config_dir, os.W_OK):
-            issues.append(f"Configuration directory is not writable: {self.config_dir}")
+            issues.append(
+                f"Configuration directory is not writable: {self.config_dir}"
+            )
 
         # Validate general configuration file
         try:
