@@ -57,7 +57,7 @@ class ContextDetector:
             is_github_actions=is_github_actions,
             is_cli_mode=is_cli_mode,
             debug_mode=debug_mode,
-            has_cli_command=has_cli_command
+            has_cli_command=has_cli_command,
         )
 
     @staticmethod
@@ -137,7 +137,6 @@ class GitHubActionsConfig:
         Raises:
             ValueError: If required inputs are missing
         """
-        # Validate required tag input
         tag = config.get("tag")
         if not tag or not tag.strip():
             raise ValueError("String mode requires a non-empty 'tag' input")

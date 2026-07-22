@@ -84,7 +84,9 @@ class SemanticVersion:
             ErrorReporter.log_and_raise_security_error(
                 f"Version string too long (max {MAX_VERSION_LENGTH} characters): got {len(version_string)} characters",
                 "input_length_validation",
-                version_string[:100] + "..." if len(version_string) > 100 else version_string,
+                version_string[:100] + "..."
+                if len(version_string) > 100
+                else version_string,
             )
 
         stripped_version = version_string.strip()
@@ -94,7 +96,9 @@ class SemanticVersion:
             ErrorReporter.log_and_raise_security_error(
                 f"Version string too long after stripping (max {MAX_VERSION_LENGTH} characters): got {len(stripped_version)} characters",
                 "stripped_length_validation",
-                stripped_version[:100] + "..." if len(stripped_version) > 100 else stripped_version,
+                stripped_version[:100] + "..."
+                if len(stripped_version) > 100
+                else stripped_version,
             )
 
         match = cls.SEMVER_PATTERN.match(stripped_version)
@@ -253,26 +257,42 @@ class SemanticVersion:
             if id2 is None:
                 return 1  # More identifiers = higher precedence
 
-            # Check if both are numeric
-            id1_numeric = id1.isdigit()
-            id2_numeric = id2.isdigit()
+            result = self._compare_identifier_pair(id1, id2)
+            if result != 0:
+                return result
 
-            if id1_numeric and id2_numeric:
-                # Both numeric - compare as integers
-                result = int(id1) - int(id2)
-                if result != 0:
-                    return -1 if result < 0 else 1
-            elif id1_numeric and not id2_numeric:
-                return -1  # Numeric identifiers have lower precedence
-            elif not id1_numeric and id2_numeric:
-                return 1  # Alphanumeric identifiers have higher precedence
-            else:
-                # Both alphanumeric - lexical comparison
-                if id1 < id2:
-                    return -1
-                elif id1 > id2:
-                    return 1
+        return 0
 
+    @staticmethod
+    def _compare_identifier_pair(id1: str, id2: str) -> int:
+        """
+        Compare a single pair of pre-release identifiers.
+
+        Numeric identifiers compare as integers and have lower precedence
+        than alphanumeric identifiers, which compare lexically in ASCII order.
+
+        Returns:
+            -1 if id1 < id2, 0 if equal, 1 if id1 > id2
+        """
+        id1_numeric = id1.isdigit()
+        id2_numeric = id2.isdigit()
+
+        if id1_numeric and id2_numeric:
+            # Both numeric - compare as integers
+            result = int(id1) - int(id2)
+            if result != 0:
+                return -1 if result < 0 else 1
+            return 0
+        if id1_numeric:
+            return -1  # Numeric identifiers have lower precedence
+        if id2_numeric:
+            return 1  # Alphanumeric identifiers have higher precedence
+
+        # Both alphanumeric - lexical comparison
+        if id1 < id2:
+            return -1
+        if id1 > id2:
+            return 1
         return 0
 
     @override

@@ -146,14 +146,11 @@ class GitOperations:
                 except Exception as e:
                     logger.debug(f"Could not fetch tags from remote: {e}")
 
-            # Get all tags
             tags: set[str] = set()
             for tag_ref in repo.tags:
                 tags.add(str(tag_ref.name))
 
-            logger.debug(
-                f"Found {len(tags)} existing git tags using GitPython"
-            )
+            logger.debug(f"Found {len(tags)} existing git tags using GitPython")
             return tags
 
         except InvalidGitRepositoryError:
