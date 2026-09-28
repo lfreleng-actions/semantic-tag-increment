@@ -45,35 +45,35 @@ jobs:
 
       - name: "Basic increment: patch"
         id: basic-patch
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'patch'
 
       - name: "Basic increment: minor"
         id: basic-minor
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'minor'
 
       - name: "Basic increment: major"
         id: basic-major
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'major'
 
       - name: "Basic increment: prerelease"
         id: basic-prerelease
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'prerelease'
 
       - name: "Basic increment: dev"
         id: basic-dev
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'dev'
@@ -153,7 +153,7 @@ jobs:
 
       - name: "Prerelease with type: alpha"
         id: prerelease-alpha
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'prerelease'
@@ -161,7 +161,7 @@ jobs:
 
       - name: "Prerelease with type: beta"
         id: prerelease-beta
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'prerelease'
@@ -169,7 +169,7 @@ jobs:
 
       - name: "Prerelease with type: rc"
         id: prerelease-rc
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'prerelease'
@@ -177,7 +177,7 @@ jobs:
 
       - name: "Increment existing prerelease"
         id: increment-prerelease
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3-alpha.1'
           increment: 'prerelease'
@@ -257,35 +257,35 @@ jobs:
 
       - name: "No prefix tag"
         id: no-prefix
-        uses: ./
+        uses: $/
         with:
           tag: '1.2.3'
           increment: 'patch'
 
       - name: "Complex prerelease"
         id: complex-prerelease
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3-alpha.1+build.123'
           increment: 'prerelease'
 
       - name: "Zero version"
         id: zero-version
-        uses: ./
+        uses: $/
         with:
           tag: 'v0.0.1'
           increment: 'patch'
 
       - name: "Large version numbers"
         id: large-version
-        uses: ./
+        uses: $/
         with:
           tag: 'v10.20.30'
           increment: 'minor'
 
       - name: "Complex prerelease with custom type"
         id: custom-prerelease
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.0.0'
           increment: 'prerelease'
@@ -293,7 +293,7 @@ jobs:
 
       - name: "Version with build metadata"
         id: build-metadata
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3+20230101'
           increment: 'patch'
@@ -382,7 +382,7 @@ jobs:
       - name: "Invalid tag format"
         id: invalid-tag
         continue-on-error: true
-        uses: ./
+        uses: $/
         with:
           tag: 'invalid-version'
           increment: 'patch'
@@ -390,7 +390,7 @@ jobs:
       - name: "Invalid increment type"
         id: invalid-increment
         continue-on-error: true
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'invalid'
@@ -398,7 +398,7 @@ jobs:
       - name: "Invalid path"
         id: invalid-path
         continue-on-error: true
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'patch'
@@ -453,14 +453,14 @@ jobs:
 
       - name: "Test with V prefix"
         id: v-prefix
-        uses: ./
+        uses: $/
         with:
           tag: 'V1.2.3'
           increment: 'patch'
 
       - name: "Test without prefix"
         id: no-prefix
-        uses: ./
+        uses: $/
         with:
           tag: '1.2.3'
           increment: 'minor'
@@ -526,7 +526,7 @@ jobs:
       # Test with conflict checking disabled for speed
       - name: "Fast execution without git checks"
         id: fast-execution
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'patch'
@@ -535,7 +535,7 @@ jobs:
       # Test with conflict checking enabled
       - name: "Execution with git checks"
         id: git-checks
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'minor'
@@ -544,7 +544,7 @@ jobs:
       # Test with debug enabled
       - name: "Debug mode execution"
         id: debug-mode
-        uses: ./
+        uses: $/
         with:
           tag: 'v1.2.3'
           increment: 'major'
