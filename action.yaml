@@ -67,8 +67,20 @@ runs:
       # yamllint disable rule:line-length
       uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # v7.0.0
       with:
-        python-version-file: "pyproject.toml"
+        # A relative path would resolve against the caller's workspace
+        python-version-file: "${{ github.action_path }}/pyproject.toml"
         # No automatic caching
+
+    # hashFiles() only sees the caller's workspace, not the action path
+    - name: 'Hash action dependencies'
+      id: pyproject-hash
+      shell: bash
+      env:
+        ACTION_PATH: "${{ github.action_path }}"
+      run: |
+        # Hash action dependencies
+        hash=$(python -c 'import hashlib, sys; print(hashlib.sha256(open(sys.argv[1], "rb").read()).hexdigest())' "$ACTION_PATH/pyproject.toml")
+        echo "hash=$hash" >> "$GITHUB_OUTPUT"
 
     # Manual caching with proper paths and key
     - name: Cache pip packages
@@ -76,7 +88,7 @@ runs:
       id: pip-cache
       with:
         path: ~/.cache/pip
-        key: ${{ runner.os }}-python-${{ hashFiles('**/pyproject.toml') }}
+        key: ${{ runner.os }}-python-${{ steps.pyproject-hash.outputs.hash }}
         restore-keys: |
           ${{ runner.os }}-python-
 
@@ -87,7 +99,7 @@ runs:
       env:
         CACHE_HIT: "${{ steps.pip-cache.outputs.cache-hit }}"
         RUNNER_OS: "${{ runner.os }}"
-        PYPROJECT_HASH: "${{ hashFiles('**/pyproject.toml') }}"
+        PYPROJECT_HASH: "${{ steps.pyproject-hash.outputs.hash }}"
       run: |
         echo "Cache Hit: $CACHE_HIT"
         echo "Runner OS: $RUNNER_OS"
