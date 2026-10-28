@@ -8,10 +8,8 @@ This module contains tests for the simplified Typer CLI interface
 focused on string mode tag incrementing functionality.
 """
 
-import sys
 from unittest.mock import MagicMock, patch
 
-import pytest
 from typer.testing import CliRunner
 
 from semantic_tag_increment.cli import main, run_github_action
@@ -382,10 +380,6 @@ class TestMainFunction:
         """Test that main function exists and is callable."""
         assert callable(main)
 
-    @pytest.mark.skipif(
-        sys.version_info[:2] == (3, 10),
-        reason="Test has import patching issues on Python 3.10",
-    )
     def test_main_calls_app(self) -> None:
         """Test that main function calls the Typer app."""
         with patch(
