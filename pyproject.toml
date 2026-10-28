@@ -24,7 +24,6 @@ classifiers = [
     "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -43,7 +42,7 @@ keywords = [
     "ci-cd",
     "automation",
 ]
-requires-python = ">=3.10,<3.14"
+requires-python = ">=3.11,<3.14"
 dependencies = [
     "typer>=0.16.0",
     "click>=8.0.0",
@@ -151,10 +150,10 @@ directory = "coverage_html_report"
 
 [tool.basedpyright]
 include = ["src"]
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
@@ -169,7 +168,7 @@ warn_unreachable = true
 strict_equality = true
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 80
 exclude = [
     ".bzr",
