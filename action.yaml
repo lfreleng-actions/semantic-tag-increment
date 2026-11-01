@@ -158,27 +158,27 @@ runs:
         # Run the semantic tag increment tool
         # Tool automatically detects GitHub Actions mode and writes outputs
 
-        # Build the command with required tag parameter
-        CMD="semantic-tag-increment --tag \"$INPUT_TAG\" --increment \"$INPUT_INCREMENT\" --path \"$INPUT_PATH\""
+        # Build the argument list. Each input is one argument, passed as
+        # text: nothing in it is run as a command.
+        args=(--tag "$INPUT_TAG" --increment "$INPUT_INCREMENT" --path "$INPUT_PATH")
 
         # Add prerelease type if provided
         if [ -n "$INPUT_PRERELEASE_TYPE" ]; then
-          CMD="$CMD --prerelease-type \"$INPUT_PRERELEASE_TYPE\""
+          args+=(--prerelease-type "$INPUT_PRERELEASE_TYPE")
         fi
 
         # Handle conflict checking based on check_tags setting
         if [ "$INPUT_CHECK_TAGS" = "false" ]; then
-          CMD="$CMD --no-check-conflicts"
+          args+=(--no-check-conflicts)
         else
-          CMD="$CMD --check-conflicts"
+          args+=(--check-conflicts)
         fi
 
         # Handle metadata preservation setting
         if [ "$INPUT_PRESERVE_METADATA" = "true" ]; then
-          CMD="$CMD --preserve-metadata"
+          args+=(--preserve-metadata)
         else
-          CMD="$CMD --no-preserve-metadata"
+          args+=(--no-preserve-metadata)
         fi
 
-        # Execute the command
-        eval "$CMD"
+        semantic-tag-increment "${args[@]}"
