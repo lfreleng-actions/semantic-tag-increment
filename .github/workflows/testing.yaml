@@ -630,6 +630,18 @@ jobs:
           tag: 'v1.2.3'
           increment: 'major'
 
+      # An empty entry puts the working directory on sys.path in any
+      # Python process that honours PYTHONPATH
+      - name: "Workspace with planted modules and an empty PYTHONPATH entry"
+        id: planted-pythonpath
+        uses: $/
+        continue-on-error: true
+        env:
+          PYTHONPATH: ':'
+        with:
+          tag: 'v1.2.3'
+          increment: 'patch'
+
       - name: "Validate caller workspace results"
         shell: bash
         env:
@@ -637,6 +649,8 @@ jobs:
           UNRELATED_PYPROJECT_TAG: ${{ steps.unrelated-pyproject.outputs.tag }}
           PLANTED_OUTCOME: ${{ steps.planted-modules.outcome }}
           PLANTED_TAG: ${{ steps.planted-modules.outputs.tag }}
+          PLANTED_PYTHONPATH_OUTCOME: ${{ steps.planted-pythonpath.outcome }}
+          PLANTED_PYTHONPATH_TAG: ${{ steps.planted-pythonpath.outputs.tag }}
         run: |
           echo "🔍 Validating caller workspace results..."
 
@@ -663,6 +677,13 @@ jobs:
             exit 1
           fi
           echo "✅ Planted modules ignored: ${PLANTED_TAG}"
+
+          if [ "${PLANTED_PYTHONPATH_OUTCOME}" != "success" ] || \
+             [ "${PLANTED_PYTHONPATH_TAG}" != "v1.2.4" ]; then
+            echo "❌ Empty PYTHONPATH entry: expected v1.2.4, got ${PLANTED_PYTHONPATH_TAG} (${PLANTED_PYTHONPATH_OUTCOME})"
+            exit 1
+          fi
+          echo "✅ Empty PYTHONPATH entry ignored: ${PLANTED_PYTHONPATH_TAG}"
 
   test-summary:
     name: 'Test Summary'
