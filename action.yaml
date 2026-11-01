@@ -113,6 +113,13 @@ runs:
       env:
         ACTION_PATH: "${{ github.action_path }}"
       run: |
+        # -I covers pip itself but not the subprocesses it starts to
+        # build the package, which honour PYTHONPATH. An inherited
+        # empty entry would put the caller's workspace, the working
+        # directory here, on their sys.path and run a sitecustomize.py
+        # from it.
+        unset PYTHONPATH
+
         # -I so a pip/ package in the caller's workspace is not imported
         python -I -m pip install --upgrade pip
 
@@ -154,6 +161,12 @@ runs:
             exit 1
             ;;
         esac
+
+        # The installed tool needs no search path of its own. An inherited
+        # PYTHONPATH with an empty entry would put the caller's workspace,
+        # the working directory here, on its sys.path and run a
+        # sitecustomize.py from it.
+        unset PYTHONPATH
 
         # Run the semantic tag increment tool
         # Tool automatically detects GitHub Actions mode and writes outputs
