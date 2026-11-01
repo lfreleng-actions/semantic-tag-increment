@@ -410,6 +410,65 @@ jobs:
           fi
           echo "✅ Invalid path correctly failed"
 
+      # Shell syntax in an input must reach the CLI as text. Each step
+      # below may fail on the value; what matters is that no marker
+      # file appears under $RUNNER_TEMP.
+      - name: "Command substitution in tag"
+        continue-on-error: true
+        uses: $/
+        with:
+          tag: 'v1.2.3$(touch "$RUNNER_TEMP/input-ran-tag")'
+          increment: 'patch'
+
+      # Were the value evaluated, the CLI would reject the truncated tag
+      # "v1" and stop the step; "||" runs the marker after that failure
+      # and "#" drops the rest of the generated line
+      - name: "Quote in tag"
+        continue-on-error: true
+        uses: $/
+        with:
+          tag: 'v1" || touch "$RUNNER_TEMP/input-ran-quote" #'
+          increment: 'patch'
+
+      # The setup step rejects a path that is not a directory, so create
+      # one with this literal name for the value to reach the CLI call
+      - name: "Create directory named with a command substitution"
+        shell: bash
+        env:
+          DIR_NAME: '.$(touch "$RUNNER_TEMP/input-ran-path")'
+        run: |
+          mkdir -p "$DIR_NAME"
+
+      - name: "Command substitution in path"
+        continue-on-error: true
+        uses: $/
+        with:
+          tag: 'v1.2.3'
+          increment: 'patch'
+          path: '.$(touch "$RUNNER_TEMP/input-ran-path")'
+
+      - name: "Command substitution in prerelease_type"
+        continue-on-error: true
+        uses: $/
+        with:
+          tag: 'v1.2.3'
+          increment: 'prerelease'
+          prerelease_type: 'rc$(touch "$RUNNER_TEMP/input-ran-pre")'
+
+      - name: "Validate inputs ran no commands"
+        shell: bash
+        run: |
+          echo "🔍 Checking for commands run from action inputs..."
+          shopt -s nullglob
+          ran=("$RUNNER_TEMP"/input-ran-*)
+          if [ "${#ran[@]}" -gt 0 ]; then
+            for marker in "${ran[@]}"; do
+              echo "❌ Input ran a command: created ${marker##*/}"
+            done
+            exit 1
+          fi
+          echo "✅ No input ran a command"
+
   output-tests:
     name: 'Output Format Tests'
     runs-on: 'ubuntu-latest'
