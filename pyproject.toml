@@ -27,6 +27,8 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Version Control",
     "Topic :: Software Development :: Build Tools",
     "Topic :: System :: Software Distribution",
@@ -42,7 +44,7 @@ keywords = [
     "ci-cd",
     "automation",
 ]
-requires-python = ">=3.11,<3.14"
+requires-python = ">=3.11,<3.16"
 dependencies = [
     "typer>=0.16.0",
     "click>=8.0.0",
